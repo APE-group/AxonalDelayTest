@@ -23,5 +23,5 @@ stdp_params:
   # (like 'alpha', 'eta', etc.). Adjust if needed.
 
 # Large static weights to ensure forced spiking
-forced_in_weight:  1000.0  # from spike_generator_in -> pre_neuron
-forced_out_weight: 1000.0  # from spike_generator_out -> post_neuron
+forced_in_weight:  5000.0  # from spike_generator_in -> pre_neuron
+forced_out_weight: 5000.0  # from spike_generator_out -> post_neuron

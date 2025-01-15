@@ -59,15 +59,26 @@ def run_stdp_alpha_forced_pl(config_file):
 
     #--------------------------------------------------------------------------
     # 4) Build the PRE-syn side (iaf_psc_alpha) for each synapse
-    #    We'll forcibly drive each pre-neuron with a spike generator
     #--------------------------------------------------------------------------
     pre_neurons = nest.Create("iaf_psc_alpha", N)
     nest.SetStatus(pre_neurons, {
-        "V_th": -55.0,   # typical threshold
+        "V_th": -10.0,   # typical threshold
         "E_L": -70.0,
         "V_reset": -70.0
     })
 
+    #--------------------------------------------------------------------------
+    # 5) Build the POST-syn side (iaf_psc_alpha) with high threshold
+    #    so it won't spike unless forced by the output generator
+    #--------------------------------------------------------------------------
+    post_neurons = nest.Create("iaf_psc_alpha", N)
+    nest.SetStatus(post_neurons, {
+        "V_th": -10.0,   # artificially high
+        "E_L": -70.0,
+        "V_reset": -70.0
+    })
+    
+    #    We'll forcibly drive each pre-neuron and post-neuron with a spike generator
     spike_generators_in = []
 
     for i in range(N):
@@ -87,17 +98,6 @@ def run_stdp_alpha_forced_pl(config_file):
             {"rule": "one_to_one"},
             {"synapse_model": "static_synapse", "weight": forced_in_weight, "delay": 1.0}
         )
-
-    #--------------------------------------------------------------------------
-    # 5) Build the POST-syn side (iaf_psc_alpha) with high threshold
-    #    so it won't spike unless forced by the output generator
-    #--------------------------------------------------------------------------
-    post_neurons = nest.Create("iaf_psc_alpha", N)
-    nest.SetStatus(post_neurons, {
-        "V_th": 20.0,   # artificially high
-        "E_L": 0.0,
-        "V_reset": 0.0
-    })
 
     spike_generators_out = []
     for i in range(N):
@@ -190,24 +190,36 @@ def run_stdp_alpha_forced_pl(config_file):
     df_post.to_csv("spikes_post_neurons.csv", index=False)
     print("Saved spikes of post_neurons to 'spikes_post_neurons.csv'")
 
-    #--------------------------------------------------------------------------
-    # 11) Plot weight evolution
-    #--------------------------------------------------------------------------
+    # 11) Plot weight evolution with points
     plt.figure(figsize=(8, 4))
     for i in range(N):
-        plt.plot(df_w["time_ms"], df_w[f"w_{i}"], label=f"Syn {i}")
+        # Plot each weight as markers (no connecting lines)
+        plt.plot(
+            df_w["time_ms"],
+            df_w[f"w_{i}"],
+            marker='o',
+            markersize=4,
+            linestyle='none',   # no line
+            label=f"Syn {i}"
+        )
+
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
     plt.title("STDP with stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
+
+    # Force x-axis to go from 0 ms to T_sim_ms
+    plt.xlim([0, T_sim_ms])
+
+    # Tick marks every 10 ms
+    plt.xticks(np.arange(0, T_sim_ms + 1, 10))
+
     plt.legend()
     plt.tight_layout()
     plt.savefig("weights_alpha_forced_pl.png", dpi=150)
     plt.show()
     print("Saved synaptic weight plot to 'weights_alpha_forced_pl.png'")
 
-    #--------------------------------------------------------------------------
     # 12) Plot raster of pre and post neurons
-    #--------------------------------------------------------------------------
     fig, axes = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
 
     # Pre neuron spikes (top)
@@ -215,11 +227,18 @@ def run_stdp_alpha_forced_pl(config_file):
     axes[0].set_ylabel("Pre neuron IDs")
     axes[0].set_title("Raster: Pre (iaf_psc_alpha)")
 
+    # Force x-axis from 0 to T_sim_ms; ticks every 10 ms
+    axes[0].set_xlim([0, T_sim_ms])
+    axes[0].set_xticks(np.arange(0, T_sim_ms + 1, 10))
+
     # Post neuron spikes (bottom)
     axes[1].scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
     axes[1].set_ylabel("Post neuron IDs")
     axes[1].set_xlabel("Time (ms)")
     axes[1].set_title("Raster: Post (iaf_psc_alpha)")
+
+    axes[1].set_xlim([0, T_sim_ms])
+    axes[1].set_xticks(np.arange(0, T_sim_ms + 1, 10))
 
     plt.tight_layout()
     plt.savefig("raster_alpha_forced_pl.png", dpi=150)
@@ -244,6 +263,12 @@ if __name__ == "__main__":
     current_dir = get_script_dir()
     config_file = os.path.join(current_dir, "config.yaml")
     run_stdp_alpha_forced_pl(config_file)
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
