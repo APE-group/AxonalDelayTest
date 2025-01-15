@@ -1,0 +1,27 @@
+# Simulation parameters
+T_sim_ms: 100          # Total simulation time (ms)
+save_int_ms: 10        # Interval for saving synaptic weights (ms)
+N: 3                    # Number of synapses
+
+# A single time-interval list for both pre and post spike trains (in ms)
+train_dt_ms: [10.0, 10.0, 10.0]   # e.g. 100 ms => ~10 Hz, 50 ms => 20 Hz
+
+# Synaptic delays for the STDP synapse
+syn_delay: [1.0, 2.0, 3.0]
+
+# Initial weights for each STDP connection
+W0: [1., 39., 50.]
+
+# Parameters for stdp_pl_synapse_hom 
+# (see NEST docs for available parameters: e.g., A_plus, A_minus, tau_plus, tau_minus, ...)
+stdp_params:
+  tau_plus: 20.0
+  lambda: 0.9
+  alpha: 0.11
+  mu: 0.4
+  # Some models also support learning rate or homeostatic params 
+  # (like 'alpha', 'eta', etc.). Adjust if needed.
+
+# Large static weights to ensure forced spiking
+forced_in_weight:  1000.0  # from spike_generator_in -> pre_neuron
+forced_out_weight: 1000.0  # from spike_generator_out -> post_neuron
