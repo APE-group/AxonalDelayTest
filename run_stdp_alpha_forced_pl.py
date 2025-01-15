@@ -34,7 +34,8 @@ def run_stdp_alpha_forced_pl(config_file):
     save_int_ms  = cfg["save_int_ms"]
     N            = cfg["N"]
 
-    train_dt_ms  = cfg["train_dt_ms"]  # e.g. [100.0, 66.7, 50.0]
+    train_dt_pre_ms  = cfg["train_dt_pre_ms"]  # e.g. [100.0, 66.7, 50.0]
+    offset_dt_post_ms  = cfg["offset_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
     syn_delay    = cfg["syn_delay"]
     W0           = cfg["W0"]
 
@@ -82,7 +83,7 @@ def run_stdp_alpha_forced_pl(config_file):
     spike_generators_in = []
 
     for i in range(N):
-        dt = train_dt_ms[i]
+        dt = train_dt_pre_ms[i]
         n_spikes = int(T_sim_ms // dt)
         spike_times = np.arange(10.0, n_spikes * dt, dt)
 
@@ -101,9 +102,9 @@ def run_stdp_alpha_forced_pl(config_file):
 
     spike_generators_out = []
     for i in range(N):
-        dt = train_dt_ms[i]
+        dt = train_dt_pre_ms[i]
         n_spikes_out = int(T_sim_ms // dt)
-        spike_times_out = np.arange(10.0, n_spikes_out * dt, dt)
+        spike_times_out = np.arange(10.0+offset_dt_post_ms[i], n_spikes_out * dt, dt)
 
         sg_out = nest.Create("spike_generator", params={
             "spike_times": spike_times_out.tolist()
