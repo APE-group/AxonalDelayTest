@@ -1,18 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import nest
 import numpy as np
 import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
-
-
-# In[2]:
-
 
 def run_stdp_alpha_forced_pl(config_file):
     """
@@ -33,8 +23,11 @@ def run_stdp_alpha_forced_pl(config_file):
     T_sim_ms     = cfg["T_sim_ms"]
     save_int_ms  = cfg["save_int_ms"]
     N            = cfg["N"]
+    plot_tick_ms            = cfg["plot_tick_ms"]
+    
 
     train_dt_pre_ms  = cfg["train_dt_pre_ms"]  # e.g. [100.0, 66.7, 50.0]
+    train_dt_post_ms  = cfg["train_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
     offset_dt_post_ms  = cfg["offset_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
     syn_delay    = cfg["syn_delay"]
     W0           = cfg["W0"]
@@ -85,7 +78,7 @@ def run_stdp_alpha_forced_pl(config_file):
     for i in range(N):
         dt = train_dt_pre_ms[i]
         n_spikes = int(T_sim_ms // dt)
-        spike_times = np.arange(10.0, n_spikes * dt, dt)
+        spike_times = np.arange(dt, n_spikes * dt, dt)
 
         sg_in = nest.Create("spike_generator", params={
             "spike_times": spike_times.tolist()
@@ -102,9 +95,9 @@ def run_stdp_alpha_forced_pl(config_file):
 
     spike_generators_out = []
     for i in range(N):
-        dt = train_dt_pre_ms[i]
+        dt = train_dt_post_ms[i]
         n_spikes_out = int(T_sim_ms // dt)
-        spike_times_out = np.arange(10.0+offset_dt_post_ms[i], n_spikes_out * dt, dt)
+        spike_times_out = np.arange(dt+offset_dt_post_ms[i], n_spikes_out * dt, dt)
 
         sg_out = nest.Create("spike_generator", params={
             "spike_times": spike_times_out.tolist()
@@ -212,7 +205,7 @@ def run_stdp_alpha_forced_pl(config_file):
     plt.xlim([0, T_sim_ms])
 
     # Tick marks every 10 ms
-    plt.xticks(np.arange(0, T_sim_ms + 1, 10))
+    plt.xticks(np.arange(0, T_sim_ms + 1, 10),[])
 
     plt.legend()
     plt.tight_layout()
@@ -230,7 +223,7 @@ def run_stdp_alpha_forced_pl(config_file):
 
     # Force x-axis from 0 to T_sim_ms; ticks every 10 ms
     axes[0].set_xlim([0, T_sim_ms])
-    axes[0].set_xticks(np.arange(0, T_sim_ms + 1, 10))
+    axes[0].set_xticks(np.arange(0, T_sim_ms + 1, plot_tick_ms))
 
     # Post neuron spikes (bottom)
     axes[1].scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
@@ -239,47 +232,10 @@ def run_stdp_alpha_forced_pl(config_file):
     axes[1].set_title("Raster: Post (iaf_psc_alpha)")
 
     axes[1].set_xlim([0, T_sim_ms])
-    axes[1].set_xticks(np.arange(0, T_sim_ms + 1, 10))
+    axes[1].set_xticks(np.arange(0, T_sim_ms + 1, plot_tick_ms))
 
     plt.tight_layout()
     plt.savefig("raster_alpha_forced_pl.png", dpi=150)
     plt.show()
     print("Saved spike raster to 'raster_alpha_forced_pl.png'")
-
-
-# In[3]:
-
-
-import os
-
-def get_script_dir():
-    try:
-        # Works if we're running as a .py script
-        return os.path.dirname(os.path.abspath(__file__))
-    except NameError:
-        # Fallback if __file__ is not defined (e.g. in Jupyter)
-        return os.getcwd()
-
-if __name__ == "__main__":
-    current_dir = get_script_dir()
-    config_file = os.path.join(current_dir, "config.yaml")
-    run_stdp_alpha_forced_pl(config_file)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
+    return df_w
