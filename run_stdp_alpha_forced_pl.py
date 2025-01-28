@@ -24,13 +24,14 @@ def run_stdp_alpha_forced_pl(config_file):
     save_int_ms  = cfg["save_int_ms"]
     N            = cfg["N"]
     plot_tick_ms            = cfg["plot_tick_ms"]
-    
+    axonal_support = cfg["axonal_support"]
 
-    train_dt_pre_ms  = cfg["train_dt_pre_ms"]  # e.g. [100.0, 66.7, 50.0]
-    train_dt_post_ms  = cfg["train_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
+    train_dt_pre_ms    = cfg["train_dt_pre_ms"]  # e.g. [100.0, 66.7, 50.0]
+    train_dt_post_ms   = cfg["train_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
     offset_dt_post_ms  = cfg["offset_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
-    syn_delay    = cfg["syn_delay"]
-    W0           = cfg["W0"]
+    delay              = cfg["delay"]
+    axonal_delay       = cfg["axonal_delay"]
+    W0                 = cfg["W0"]
 
     stdp_params  = cfg.get("stdp_params", {})
     forced_in_weight  = cfg.get("forced_in_weight",  1000.0)
@@ -49,7 +50,10 @@ def run_stdp_alpha_forced_pl(config_file):
     #    with the user-provided parameters. Then we'll use "my_stdp_pl_hom" 
     #    in nest.Connect(...).
     #--------------------------------------------------------------------------
-    nest.CopyModel("stdp_pl_synapse_hom", "my_stdp_pl_hom", stdp_params)
+    if axonal_support:
+        nest.CopyModel("stdp_pl_synapse_hom_ax_delay", "my_stdp_pl_hom", stdp_params)
+    else:
+        nest.CopyModel("stdp_pl_synapse_hom", "my_stdp_pl_hom", stdp_params)
 
     #--------------------------------------------------------------------------
     # 4) Build the PRE-syn side (iaf_psc_alpha) for each synapse
@@ -118,16 +122,29 @@ def run_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     connection_handles = []
     for i in range(N):
-        nest.Connect(
-            pre_neurons[i],
-            post_neurons[i],
-            {"rule": "one_to_one"},
-            {
-                "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
-                "weight": W0[i],
-                "delay": syn_delay[i]
-            }
-        )
+        if axonal_support:
+            nest.Connect(
+                pre_neurons[i],
+                post_neurons[i],
+                {"rule": "one_to_one"},
+                {
+                    "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
+                    "weight": W0[i],
+                    "delay": delay[i],
+                    "axonal_delay": axonal_delay[i]
+                }
+            )
+        else:
+            nest.Connect(
+                pre_neurons[i],
+                post_neurons[i],
+                {"rule": "one_to_one"},
+                {
+                    "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
+                    "weight": W0[i],
+                    "delay": delay[i]
+                }
+            )            
         # Grab the connection handle for weight logging
         conn_obj = nest.GetConnections(pre_neurons[i], post_neurons[i])[0]
         connection_handles.append(conn_obj)

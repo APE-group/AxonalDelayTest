@@ -6,11 +6,15 @@ N: 5                    # Number of synapses
 
 # A single time-interval list for both pre and post spike trains (in ms)
 train_dt_pre_ms: [200.0, 200.0, 200.0, 200.0, 200.0] 
-train_dt_post_ms: [100.0, 100.0, 100.0, 100.0, 100.0] 
-offset_dt_post_ms: [10.0, 10.0, 10.0, 10.0, 10.0] 
+train_dt_post_ms: [200.0, 200.0, 200.0, 200.0, 200.0] 
+offset_dt_post_ms: [-0.5, -0.5, -0.5, -0.5, -0.5] 
 
 # Synaptic delays for the STDP synapse
-syn_delay: [1.0, 1.0, 1.0, 1.0, 1.0]
+delay: [1.0, 1.0, 1.0, 1.0, 1.0]
+axonal_delay: [.0, .0, .0, .0, .0]
+
+# Synaptic model
+axonal_support: False
 
 # Initial weights for each STDP connection
 W0: [1., 38., 39.5, 41., 50.]
