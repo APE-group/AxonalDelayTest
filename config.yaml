@@ -1,23 +1,33 @@
+verbose: False
 # Simulation parameters
 T_sim_ms: 600          # Total simulation time (ms)
 save_int_ms: 10        # Interval for saving synaptic weights (ms)
 N: 5                    # Number of synapses
 
-
 # A single time-interval list for both pre and post spike trains (in ms)
-train_dt_pre_ms: [200.0, 200.0, 200.0, 200.0, 200.0] 
-train_dt_post_ms: [200.0, 200.0, 200.0, 200.0, 200.0] 
-offset_dt_post_ms: [-0.5, -0.5, -0.5, -0.5, -0.5] 
+spike_train_pre_ms: [
+    [200,400],
+    [200,400],
+    [200,400],
+    [200,400],
+    [200,400]]
+                
+spike_train_post_ms: [
+    [190],
+    [199.9],
+    [200.0],
+    [200.1],
+    [210]]
 
 # Synaptic delays for the STDP synapse
-delay: [1.0, 1.0, 1.0, 1.0, 1.0]
-axonal_delay: [.0, .0, .0, .0, .0]
+delay: [0.1, 0.1, 0.1, 0.1, 0.1 ]
+axonal_delay: [1.0, 1.0, 1.0, 1.0, 1.0]
 
 # Synaptic model
 axonal_support: False
 
 # Initial weights for each STDP connection
-W0: [1., 38., 39.5, 41., 50.]
+W0: [39.5, 39.5, 39.5, 39.5, 39.5]
 
 # Parameters for stdp_pl_synapse_hom 
 # (see NEST docs for available parameters: e.g., A_plus, A_minus, tau_plus, tau_minus, ...)

@@ -19,16 +19,17 @@ def run_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     with open(config_file, 'r') as f:
         cfg = yaml.safe_load(f)
-
+    
+    verbose      = cfg["verbose"]
     T_sim_ms     = cfg["T_sim_ms"]
     save_int_ms  = cfg["save_int_ms"]
     N            = cfg["N"]
     plot_tick_ms            = cfg["plot_tick_ms"]
     axonal_support = cfg["axonal_support"]
 
-    train_dt_pre_ms    = cfg["train_dt_pre_ms"]  # e.g. [100.0, 66.7, 50.0]
-    train_dt_post_ms   = cfg["train_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
-    offset_dt_post_ms  = cfg["offset_dt_post_ms"]  # e.g. [100.0, 66.7, 50.0]
+    spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
+    spike_train_post_ms   = cfg["spike_train_post_ms"]  
+
     delay              = cfg["delay"]
     axonal_delay       = cfg["axonal_delay"]
     W0                 = cfg["W0"]
@@ -41,6 +42,9 @@ def run_stdp_alpha_forced_pl(config_file):
     # 2) Reset and configure NEST kernel
     #--------------------------------------------------------------------------
     nest.ResetKernel()
+    nest.SetKernelStatus({"resolution": 0.1})
+    nest.set_verbosity('M_ERROR')
+    
     # e.g., nest.SetKernelStatus({"resolution": 0.1})
 
     #--------------------------------------------------------------------------
@@ -69,6 +73,7 @@ def run_stdp_alpha_forced_pl(config_file):
     # 5) Build the POST-syn side (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
     #--------------------------------------------------------------------------
+    if verbose: print("step 5 BEGIN ------------------")
     post_neurons = nest.Create("iaf_psc_alpha", N)
     nest.SetStatus(post_neurons, {
         "V_th": -10.0,   # artificially high
@@ -78,14 +83,12 @@ def run_stdp_alpha_forced_pl(config_file):
     
     #    We'll forcibly drive each pre-neuron and post-neuron with a spike generator
     spike_generators_in = []
-
+    
+    #loop over N synapses
     for i in range(N):
-        dt = train_dt_pre_ms[i]
-        n_spikes = int(T_sim_ms // dt)
-        spike_times = np.arange(dt, n_spikes * dt, dt)
 
         sg_in = nest.Create("spike_generator", params={
-            "spike_times": spike_times.tolist()
+            "spike_times": spike_train_pre_ms[i]
         })
         spike_generators_in.append(sg_in)
 
@@ -98,13 +101,12 @@ def run_stdp_alpha_forced_pl(config_file):
         )
 
     spike_generators_out = []
+
+    #loop over N synapses
     for i in range(N):
-        dt = train_dt_post_ms[i]
-        n_spikes_out = int(T_sim_ms // dt)
-        spike_times_out = np.arange(dt+offset_dt_post_ms[i], n_spikes_out * dt, dt)
 
         sg_out = nest.Create("spike_generator", params={
-            "spike_times": spike_times_out.tolist()
+            "spike_times": spike_train_post_ms[i]
         })
         spike_generators_out.append(sg_out)
 
@@ -116,10 +118,11 @@ def run_stdp_alpha_forced_pl(config_file):
             {"rule": "one_to_one"},
             {"synapse_model": "static_synapse", "weight": forced_out_weight, "delay": 1.0}
         )
-
+    if verbose: print("step 5 END ------------------")
     #--------------------------------------------------------------------------
     # 6) Connect pre_neuron -> post_neuron with the custom "my_stdp_pl_hom" synapse
     #--------------------------------------------------------------------------
+    if verbose: print("step 6 BEGIN ------------------")
     connection_handles = []
     for i in range(N):
         if axonal_support:
@@ -148,19 +151,22 @@ def run_stdp_alpha_forced_pl(config_file):
         # Grab the connection handle for weight logging
         conn_obj = nest.GetConnections(pre_neurons[i], post_neurons[i])[0]
         connection_handles.append(conn_obj)
-
+    if verbose: print("step 6 END ------------------")
     #--------------------------------------------------------------------------
     # 7) Spike recorders for pre_neurons and post_neurons
     #--------------------------------------------------------------------------
+    if verbose: print("step 7 BEGIN  ------------------")
     spike_rec_pre  = nest.Create("spike_recorder")
     spike_rec_post = nest.Create("spike_recorder")
 
     nest.Connect(pre_neurons,  spike_rec_pre,  {"rule": "all_to_all"})
     nest.Connect(post_neurons, spike_rec_post, {"rule": "all_to_all"})
+    if verbose: print("step 7 END ------------------")
 
     #--------------------------------------------------------------------------
     # 8) Simulation in steps, log weight changes
     #--------------------------------------------------------------------------
+    if verbose: print("step 8 BEGIN  ------------------")
     current_time = 0.0
     weight_records = []
 
@@ -174,7 +180,8 @@ def run_stdp_alpha_forced_pl(config_file):
             w_val = conn_obj.get("weight")
             record_now[f"w_{j}"] = w_val
         weight_records.append(record_now)
-
+        
+    if verbose: print("step 8 END  ------------------")
     #--------------------------------------------------------------------------
     # 9) Save weight evolution to CSV
     #--------------------------------------------------------------------------
