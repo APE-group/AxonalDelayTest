@@ -234,7 +234,6 @@ def run_stdp_alpha_forced_pl(config_file):
     plt.legend()
     plt.tight_layout()
     plt.savefig("weights_alpha_forced_pl.png", dpi=150)
-    plt.show()
     print("Saved synaptic weight plot to 'weights_alpha_forced_pl.png'")
 
     # 12) Plot raster of pre and post neurons
@@ -260,6 +259,5 @@ def run_stdp_alpha_forced_pl(config_file):
 
     plt.tight_layout()
     plt.savefig("raster_alpha_forced_pl.png", dpi=150)
-    plt.show()
     print("Saved spike raster to 'raster_alpha_forced_pl.png'")
     return df_w
