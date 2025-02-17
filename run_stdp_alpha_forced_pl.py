@@ -24,20 +24,25 @@ def run_stdp_alpha_forced_pl(config_file):
     T_sim_ms     = cfg["T_sim_ms"]
     save_int_ms  = cfg["save_int_ms"]
     N            = cfg["N"]
-    plot_tick_ms            = cfg["plot_tick_ms"]
     axonal_support = cfg["axonal_support"]
 
     spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
     spike_train_post_ms   = cfg["spike_train_post_ms"]  
 
-    delay              = cfg["delay"]
-    axonal_delay       = cfg["axonal_delay"]
+    if axonal_support:
+        dendritic_delay    = cfg["dendritic_delay"]
+        axonal_delay       = cfg["axonal_delay"]
+    else:
+        delay              = cfg["dendritic_delay"]
     W0                 = cfg["W0"]
 
     stdp_params  = cfg.get("stdp_params", {})
     forced_in_weight  = cfg.get("forced_in_weight",  1000.0)
     forced_out_weight = cfg.get("forced_out_weight", 1000.0)
 
+    plot_marker_ms            = cfg["plot_marker_ms"]
+    plot_major_ticks_ms       = cfg["plot_major_ticks_ms"]
+    
     #--------------------------------------------------------------------------
     # 2) Reset and configure NEST kernel
     #--------------------------------------------------------------------------
@@ -133,7 +138,7 @@ def run_stdp_alpha_forced_pl(config_file):
                 {
                     "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
                     "weight": W0[i],
-                    "delay": delay[i],
+                    "dendritic_delay": dendritic_delay[i],
                     "axonal_delay": axonal_delay[i]
                 }
             )
@@ -209,7 +214,7 @@ def run_stdp_alpha_forced_pl(config_file):
     print("Saved spikes of post_neurons to 'spikes_post_neurons.csv'")
 
     # 11) Plot weight evolution with points
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(8, 6))
     for i in range(N):
         # Plot each weight as markers (no connecting lines)
         plt.plot(
@@ -221,43 +226,39 @@ def run_stdp_alpha_forced_pl(config_file):
             label=f"Syn {i}"
         )
 
+    plt.legend()
+    plt.xlim(0, T_sim_ms)
+    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
+    plt.minorticks_on()
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
     plt.title("STDP with stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
 
-    # Force x-axis to go from 0 ms to T_sim_ms
-    plt.xlim([0, T_sim_ms])
-
-    # Tick marks every 10 ms
-    plt.xticks(np.arange(0, T_sim_ms + 1, 10),[])
-
-    plt.legend()
     plt.tight_layout()
     plt.savefig("weights_alpha_forced_pl.png", dpi=150)
     print("Saved synaptic weight plot to 'weights_alpha_forced_pl.png'")
 
     # 12) Plot raster of pre and post neurons
-    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
+    plt.figure(figsize=(8, 6))
+    plt.subplot(211)
+    plt.scatter(df_pre["times"], df_pre["senders"], s=5, c='tab:blue')
+    plt.xlim(0, T_sim_ms)
+    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
+    plt.minorticks_on()
+    plt.ylabel('Pre neuron IDs')
+    plt.title('Raster: Pre (iaf_psc_alpha)')
 
-    # Pre neuron spikes (top)
-    axes[0].scatter(df_pre["times"], df_pre["senders"], s=5, c='tab:blue')
-    axes[0].set_ylabel("Pre neuron IDs")
-    axes[0].set_title("Raster: Pre (iaf_psc_alpha)")
-
-    # Force x-axis from 0 to T_sim_ms; ticks every 10 ms
-    axes[0].set_xlim([0, T_sim_ms])
-    axes[0].set_xticks(np.arange(0, T_sim_ms + 1, plot_tick_ms))
-
-    # Post neuron spikes (bottom)
-    axes[1].scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
-    axes[1].set_ylabel("Post neuron IDs")
-    axes[1].set_xlabel("Time (ms)")
-    axes[1].set_title("Raster: Post (iaf_psc_alpha)")
-
-    axes[1].set_xlim([0, T_sim_ms])
-    axes[1].set_xticks(np.arange(0, T_sim_ms + 1, plot_tick_ms))
+    plt.subplot(212)
+    plt.scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
+    plt.xlim(0, T_sim_ms)
+    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
+    plt.minorticks_on()
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Post neuron IDs')
+    plt.title('Raster: Post (iaf_psc_alpha)')
 
     plt.tight_layout()
     plt.savefig("raster_alpha_forced_pl.png", dpi=150)
     print("Saved spike raster to 'raster_alpha_forced_pl.png'")
+
     return df_w

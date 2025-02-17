@@ -7,3 +7,4 @@ if __name__ == "__main__":
     config_file = os.path.join(current_dir, "config.yaml")
     df_w = run_stdp_alpha_forced_pl(config_file)
     print("df_w",df_w)
+    plt.show()
