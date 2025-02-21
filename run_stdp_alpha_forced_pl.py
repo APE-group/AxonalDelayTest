@@ -42,6 +42,9 @@ def run_stdp_alpha_forced_pl(config_file):
 
     plot_marker_ms            = cfg["plot_marker_ms"]
     plot_major_ticks_ms       = cfg["plot_major_ticks_ms"]
+
+    mm_pre       = cfg["mm_pre"]
+    mm_post       = cfg["mm_post"]
     
     #--------------------------------------------------------------------------
     # 2) Reset and configure NEST kernel
@@ -158,7 +161,7 @@ def run_stdp_alpha_forced_pl(config_file):
         connection_handles.append(conn_obj)
     if verbose: print("step 6 END ------------------")
     #--------------------------------------------------------------------------
-    # 7) Spike recorders for pre_neurons and post_neurons
+    # 7.0) Spike recorders for pre_neurons and post_neurons
     #--------------------------------------------------------------------------
     if verbose: print("step 7 BEGIN  ------------------")
     spike_rec_pre  = nest.Create("spike_recorder")
@@ -167,6 +170,19 @@ def run_stdp_alpha_forced_pl(config_file):
     nest.Connect(pre_neurons,  spike_rec_pre,  {"rule": "all_to_all"})
     nest.Connect(post_neurons, spike_rec_post, {"rule": "all_to_all"})
     if verbose: print("step 7 END ------------------")
+
+    #--------------------------------------------------------------------------
+    # 7.1) Multimeters for pre_neurons[0] and post_neurons[0]
+    #--------------------------------------------------------------------------
+    n_mm_pre = len(mm_pre)
+    n_mm_post = len(mm_post)
+    
+    if n_mm_pre > 0:
+        mm_pre = nest.Create('multimeter', n_mm_pre, {'record_from': ["V_m"], 'interval': .1})
+        [nest.Connect(mm_pre[i], pre_neurons[i]) for i in range (n_mm_pre)]
+    if n_mm_post > 0:
+        mm_post = nest.Create('multimeter', n_mm_post, {'record_from': ["V_m"], 'interval': .1})
+        [nest.Connect(mm_post[i], post_neurons[i]) for i in range (n_mm_post)]
 
     #--------------------------------------------------------------------------
     # 8) Simulation in steps, log weight changes
@@ -195,7 +211,7 @@ def run_stdp_alpha_forced_pl(config_file):
     print("Saved synaptic weight evolution to 'weights_alpha_forced_pl.csv'")
 
     #--------------------------------------------------------------------------
-    # 10) Retrieve and save spike data
+    # 10.0) Retrieve and save spike data
     #--------------------------------------------------------------------------
     events_pre = spike_rec_pre.get("events")
     df_pre = pd.DataFrame({
@@ -212,6 +228,16 @@ def run_stdp_alpha_forced_pl(config_file):
     })
     df_post.to_csv("spikes_post_neurons.csv", index=False)
     print("Saved spikes of post_neurons to 'spikes_post_neurons.csv'")
+
+
+    #--------------------------------------------------------------------------
+    # 10.1) Retrieve multimeter data
+    #--------------------------------------------------------------------------
+    if n_mm_pre > 0:
+        res_pre = [nest.GetStatus(mm_pre[i], 'events')[0] for i in range(n_mm_pre)]
+    if n_mm_post > 0:
+        res_post = [nest.GetStatus(mm_post[i], 'events')[0] for i in range(n_mm_post)]
+
 
     # 11) Plot weight evolution with points
     plt.figure(figsize=(8, 6))
@@ -261,4 +287,21 @@ def run_stdp_alpha_forced_pl(config_file):
     plt.savefig("raster_alpha_forced_pl.png", dpi=150)
     print("Saved spike raster to 'raster_alpha_forced_pl.png'")
 
+    plt.figure('MembraneV')
+    ###############################################################################
+    plt.title('Presynptic neurons')
+    for i in range(n_mm_pre):
+        plt.subplot(n_mm_pre,1,i+1)
+        plt.plot(res_pre[i]['times'], res_pre[i]['V_m'], label='neu '+str(i))
+        plt.legend()
+        plt.xlim(0, T_sim_ms)
+        plt.xticks(np.arange(0, T_sim_ms + 1, 10))
+        plt.ylabel('Vm [mV]')
+    #plt.xticks(np.arange(0, T_sim_ms + 1, 10))
+    plt.xlabel('Time [ms]')
+    
+
+
+
+    
     return df_w
