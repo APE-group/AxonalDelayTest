@@ -1,0 +1,55 @@
+verbose: False
+# Simulation parameters
+T_sim_ms: 150          # Total simulation time (ms)
+save_int_ms: 5        # Interval for saving synaptic weights (ms)
+N: 6                    # Number of synapses
+
+# A single time-interval list for both pre and post spike trains (in ms)
+spike_train_pre_ms: [
+    [34,37,40,100],
+    [37,40,100],
+    [40,100],
+    [34,37,40,100],
+    [37,40,100],
+    [40,100]]
+                
+spike_train_post_ms: [
+    [30],
+    [30],
+    [30],
+    [5],
+    [5],
+    [5]]
+
+# Synaptic delays for the STDP synapse
+dendritic_delay: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+axonal_delay: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+#axonal_delay: [0., 0., 0., 0., 0., 0.]
+
+# Synaptic model
+axonal_support: True
+
+# Initial weights for each STDP connection
+W0: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5]
+
+# Parameters for stdp_pl_synapse_hom 
+# (see NEST docs for available parameters: e.g., A_plus, A_minus, tau_plus, tau_minus, ...)
+stdp_params:
+  tau_plus: 20.0
+  lambda: 0.9
+  alpha: 0.11
+  mu: 0.4
+  # Some models also support learning rate or homeostatic params 
+  # (like 'alpha', 'eta', etc.). Adjust if needed.
+
+# Large static weights to ensure forced spiking
+forced_in_weight:  6000.0  # from spike_generator_in -> pre_neuron
+forced_out_weight: 6000.0  # from spike_generator_out -> post_neuron
+
+#plotting params
+plot_marker_ms: 50       #time interval of markers in plots
+
+plot_major_ticks_ms: 10
+
+mm_pre: [0,1,2]
+mm_post: []
