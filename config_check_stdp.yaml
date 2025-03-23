@@ -1,0 +1,31 @@
+N: 5
+csv_file_pre: 'spikes_pre_neurons.csv'
+csv_file_post: 'spikes_post_neurons.csv'
+
+stdp_rule: 'std_stdp'  # or 'spec_stdp'
+A_plus: 0.01
+A_minus: 0.012
+tau_plus_ms: 20.0
+tau_minus_ms: 20.0
+
+# Lists for each synapse 1..N
+initial_weights:
+  - 39.5
+  - 39.5
+  - 39.5
+  - 39.5
+  - 39.5
+
+axonal_delays_ms:
+  - 5.0
+  - 5.0
+  - 5.0
+  - 5.0
+  - 5.0
+
+dendritic_delays_ms:
+  - 0.1
+  - 0.1
+  - 0.1
+  - 0.1
+  - 0.1
