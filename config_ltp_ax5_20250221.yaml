@@ -24,7 +24,6 @@ spike_train_post_ms: [
 # Synaptic delays for the STDP synapse
 dendritic_delay: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 axonal_delay: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
-#axonal_delay: [0., 0., 0., 0., 0., 0.]
 
 # Synaptic model
 axonal_support: True
@@ -51,5 +50,6 @@ plot_marker_ms: 50       #time interval of markers in plots
 
 plot_major_ticks_ms: 10
 
+plot_mm: True
 mm_pre: [0,1,2]
 mm_post: []
