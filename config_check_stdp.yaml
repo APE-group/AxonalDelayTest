@@ -1,13 +1,20 @@
-N: 5
+N: 4
 csv_file_pre: 'spikes_pre_neurons.csv'
 csv_file_post: 'spikes_post_neurons.csv'
 
-stdp_rule: 'stdp_pl_synapse_hom'
+stdp_rule: 'stdp_pl_synapse_hom_causal'
 tau_plus_ms: 20
 lambda_pmt: 0.9
 alpha: 0.11
 mu: 0.4
 w_0: 1.
+
+#stdp_rule: 'stdp_pl_synapse_hom'
+#tau_plus_ms: 20
+#lambda_pmt: 0.9
+#alpha: 0.11
+#mu: 0.4
+#w_0: 1.
 
 #stdp_rule: 'std_stdp'  # or 'spec_stdp
 #A_plus: 0.01
@@ -21,17 +28,14 @@ initial_weights:
   - 39.5
   - 39.5
   - 39.5
-  - 39.5
 
 axonal_delays_ms:
   - 5.0
   - 5.0
   - 5.0
   - 5.0
-  - 5.0
 
 dendritic_delays_ms:
-  - 0.1
   - 0.1
   - 0.1
   - 0.1
