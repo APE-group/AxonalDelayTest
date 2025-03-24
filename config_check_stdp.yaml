@@ -2,11 +2,18 @@ N: 5
 csv_file_pre: 'spikes_pre_neurons.csv'
 csv_file_post: 'spikes_post_neurons.csv'
 
-stdp_rule: 'std_stdp'  # or 'spec_stdp'
-A_plus: 0.01
-A_minus: 0.012
-tau_plus_ms: 20.0
-tau_minus_ms: 20.0
+stdp_rule: 'stdp_pl_synapse_hom'
+tau_plus_ms: 20
+lambda_pmt: 0.9
+alpha: 0.11
+mu: 0.4
+w_0: 1.
+
+#stdp_rule: 'std_stdp'  # or 'spec_stdp
+#A_plus: 0.01
+#A_minus: 0.012
+#tau_plus_ms: 20.0
+#tau_minus_ms: 20.0
 
 # Lists for each synapse 1..N
 initial_weights:

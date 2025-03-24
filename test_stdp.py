@@ -101,16 +101,11 @@ def std_stdp(
     """
     Standard pair-based STDP.
     We store a trajectory of (pre_spike_ms, post_spike_ms,
-                             pre_arr_ms,  post_arr_ms,
+                             pre_arr_ms, post_arr_ms,
                              dt_ms, dW, w_after).
 
     - pre_spike_times_ms, post_spike_times_ms : the original times of the spikes.
     - pre_spike_arrivals_ms, post_spike_arrivals_ms : the arrival times (with delay).
-    We do a double loop over them in parallel.
-
-    The index in 'pre_spike_times_ms' corresponds to the same index in 'pre_spike_arrivals_ms'.
-    i.e. pre_spike_times_ms[k] + axonal_delay = pre_spike_arrivals_ms[k].
-    The same for post.
 
     We define dt_ms = post_spike_arrivals_ms[j] - pre_spike_arrivals_ms[i].
     """
@@ -164,20 +159,65 @@ def std_stdp(
     return w, trajectory
 
 
-def spec_stdp(
+def stdp_pl_synapse_hom(
     pre_spike_times_ms, post_spike_times_ms,
     pre_spike_arrivals_ms, post_spike_arrivals_ms,
-    A_plus, A_minus, tau_plus_ms, tau_minus_ms,
+    tau_plus_ms, lambda_pmt, alpha, mu, w_0,
     w_init,
+    writer,
+    synapse_id,
     initial_time_for_plot_ms
 ):
     """
-    Specialized STDP (placeholder).
-    We'll store a single 'fake' event with no real updates:
-    (None, None, None, None, dt_ms=0, dW=0, w_init).
+    A different STDP-like rule (stdp_pl_synapse_hom).
+    We store a trajectory of (pre_spike_ms, post_spike_ms,
+                             pre_arr_ms, post_arr_ms,
+                             dt_ms, dW, w_after).
     """
-    traj = [(None, None, None, None, 0.0, 0.0, w_init)]
-    return w_init, traj
+    w = w_init
+    trajectory = []
+
+    # Write an initial row => no real spikes, dt=0, dW=0, W_init
+    writer.writerow([synapse_id, 0, None, None, None, None, None, 0.0, w])
+    trajectory.append((None, None, None, None, 0.0, 0.0, w))
+
+    event_idx = 1
+
+    for i_pre, pre_t_orig in enumerate(pre_spike_times_ms):
+        pre_t_arr = pre_spike_arrivals_ms[i_pre]
+
+        for j_post, post_t_orig in enumerate(post_spike_times_ms):
+            post_t_arr = post_spike_arrivals_ms[j_post]
+
+            dt_ms = post_t_arr - pre_t_arr
+            if dt_ms > 0:
+                dW = lambda_pmt * pow(w_0,(1 - mu)) * pow(w, mu) * np.exp(-dt_ms / tau_plus_ms)
+            else:
+                dW = -lambda_pmt * alpha * w * np.exp(dt_ms / tau_plus_ms)
+
+            w_new = w + dW
+            time_event_ms = 0.5*(pre_t_arr + post_t_arr)
+
+            writer.writerow([
+                synapse_id,
+                event_idx,
+                pre_t_orig,
+                post_t_orig,
+                pre_t_arr,
+                post_t_arr,
+                dt_ms,
+                dW,
+                w_new
+            ])
+
+            trajectory.append((
+                pre_t_orig, post_t_orig,
+                pre_t_arr, post_t_arr,
+                dt_ms, dW, w_new
+            ))
+            w = w_new
+            event_idx += 1
+    return w, trajectory
 
 
 ###############################################################################
@@ -197,8 +237,6 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms):
         if not trajectory or len(trajectory) == 0:
             continue
 
-        # The first row is a "fake" row => might have None times
-        # We'll build arrays skipping that if needed
         times_ms = []
         weights  = []
         for idx, event in enumerate(trajectory):
@@ -206,7 +244,6 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms):
              pre_arr, post_arr,
              dt_ms, dW, w_after) = event
             if pre_arr is not None and post_arr is not None:
-                # midpoint
                 time_event_ms = 0.5*(pre_arr + post_arr)
                 times_ms.append(time_event_ms)
                 weights.append(w_after)
@@ -223,25 +260,10 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms):
     plt.ylabel("Weight")
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
-    plt.show()
-
 
 def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms):
     """
-    We plot the *raw* pre spike times (no delay) or arrival times?
-    The user didn't clarify. 
-    Typically, you'd either show the raw spikes or the arrival times.
-    Let's show the *arrival times* if you prefer the actual timing at the synapse.
-
-    But the user specifically said we want the same times used for the final STDP. 
-    So let's confirm we want to see arrival times or raw? 
-    Let's assume we want to see the "raw" times in the pre_raster and post_raster 
-    so the user can see the difference.
-
-    Actually, they've asked to unify everything to the same time axis. 
-    The question is ambiguous. 
-    We'll keep it consistent with our prior approach: 
-    we show *arrival times* in the raster. 
+    Raster for *pre-synaptic* neurons, with arrival times.
     """
     plt.figure()
     plt.title("Raster Plot: Pre-Synaptic Neurons (ms)")
@@ -256,12 +278,10 @@ def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms):
 
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
-    plt.show()
-
 
 def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms):
     """
-    Raster for *post-synaptic* neurons (N+1..2N), showing arrival times if we want consistency.
+    Raster for *post-synaptic* neurons (N+1..2N), with arrival times.
     """
     plt.figure()
     plt.title("Raster Plot: Post-Synaptic Neurons (ms)")
@@ -277,7 +297,6 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms):
 
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
-    plt.show()
 
 
 ###############################################################################
@@ -292,22 +311,32 @@ def test_stdp_main():
     # 2) Basic parameters
     N             = config["N"]
     stdp_rule     = config["stdp_rule"]
+    print("STDP_RULE", stdp_rule)
     csv_file_pre  = config["csv_file_pre"]
     csv_file_post = config["csv_file_post"]
-
-    A_plus       = config.get("A_plus", 0.01)
-    A_minus      = config.get("A_minus", 0.012)
-    tau_plus_ms  = config.get("tau_plus_ms", 20.0)
-    tau_minus_ms = config.get("tau_minus_ms", 20.0)
+    
+    if stdp_rule == 'std_stdp':
+        A_plus       = config.get("A_plus", 0.01)
+        A_minus      = config.get("A_minus", 0.012)
+        tau_plus_ms  = config.get("tau_plus_ms", 20.0)
+        tau_minus_ms = config.get("tau_minus_ms", 20.0)
+    elif stdp_rule == 'stdp_pl_synapse_hom':
+        tau_plus_ms  = config.get("tau_plus_ms", 20.0)
+        lambda_pmt   = config.get("lambda_pmt", 0.9)
+        alpha        = config.get("alpha", 0.11)
+        mu           = config.get("mu", 0.4)
+        w_0          = config.get("w_0", 1.0)
+    else:
+        raise ValueError("unsupported plasticity rule")
 
     # Default delay values
     axon_default  = 5.0
     dend_default  = 0.1
 
     # We now read them as lists of length N
-    init_weights_list        = config.get("initial_weights", None)
-    axonal_delays_list       = config.get("axonal_delays_ms", None)
-    dendritic_delays_list    = config.get("dendritic_delays_ms", None)
+    init_weights_list     = config.get("initial_weights", None)
+    axonal_delays_list    = config.get("axonal_delays_ms", None)
+    dendritic_delays_list = config.get("dendritic_delays_ms", None)
 
     if init_weights_list is None or len(init_weights_list) != N:
         raise ValueError("initial_weights must be a list of length N.")
@@ -322,13 +351,11 @@ def test_stdp_main():
 
     for i in range(1, N+1):
         # i-th synapse => pre neuron i, post neuron i+N
-        # Get the i-th delays from the config lists
         axon_delay_ms  = safe_get_list_item(axonal_delays_list, i-1, axon_default)
         dend_delay_ms  = safe_get_list_item(dendritic_delays_list, i-1, dend_default)
 
-        # Shift each pre spike by axon_delay, each post by dend_delay
-        arrived_pre_dict[i] = [t + axon_delay_ms  for t in pre_spikes_dict[i]]
-        arrived_post_dict[i]= [t + dend_delay_ms  for t in post_spikes_dict[i]]
+        arrived_pre_dict[i]  = [t + axon_delay_ms  for t in pre_spikes_dict[i]]
+        arrived_post_dict[i] = [t + dend_delay_ms  for t in post_spikes_dict[i]]
 
     # Combine arrival times for min/max range
     all_arr_pre = [t for i in range(1, N+1) for t in arrived_pre_dict[i]]
@@ -346,25 +373,25 @@ def test_stdp_main():
     final_weights = [0.0]*N
     synapses_trajectories = {}
 
-    if stdp_rule == "std_stdp":
-        summary_file = "stdp_summary.csv"
-        with open(summary_file, "w", newline="") as f_out:
-            writer = csv.writer(f_out)
-            writer.writerow([
-                "synapse_id", "event_idx",
-                "pre_spike_ms", "post_spike_ms",
-                "pre_arrived_ms", "post_arrived_ms",
-                "dt_ms", "dW", "W"
-            ])
+    summary_file = "stdp_summary.csv"
+    with open(summary_file, "w", newline="") as f_out:
+        writer = csv.writer(f_out)
+        # Common header
+        writer.writerow([
+            "synapse_id", "event_idx",
+            "pre_spike_ms", "post_spike_ms",
+            "pre_arrived_ms", "post_arrived_ms",
+            "dt_ms", "dW", "W"
+        ])
 
+        if stdp_rule == "std_stdp":
             for syn_i in range(1, N+1):
                 w_init = init_weights_list[syn_i-1]
-
                 w_final, trajectory = std_stdp(
-                    pre_spikes_dict[syn_i],   # raw pre times
-                    post_spikes_dict[syn_i],  # raw post times
-                    arrived_pre_dict[syn_i],  # arrived pre times
-                    arrived_post_dict[syn_i], # arrived post times
+                    pre_spikes_dict[syn_i],
+                    post_spikes_dict[syn_i],
+                    arrived_pre_dict[syn_i],
+                    arrived_post_dict[syn_i],
                     A_plus, A_minus,
                     tau_plus_ms, tau_minus_ms,
                     w_init,
@@ -374,25 +401,25 @@ def test_stdp_main():
                 )
                 final_weights[syn_i-1] = w_final
                 synapses_trajectories[syn_i] = trajectory
-        print(f"STDP summary logged to {summary_file}")
 
-    elif stdp_rule == "spec_stdp":
-        for syn_i in range(1, N+1):
-            w_init = init_weights_list[syn_i-1]
-            w_final, trajectory = spec_stdp(
-                pre_spikes_dict[syn_i],
-                post_spikes_dict[syn_i],
-                arrived_pre_dict[syn_i],
-                arrived_post_dict[syn_i],
-                A_plus, A_minus,
-                tau_plus_ms, tau_minus_ms,
-                w_init,
-                initial_time_for_plot_ms=global_min_time_ms
-            )
-            final_weights[syn_i-1] = w_final
-            synapses_trajectories[syn_i] = trajectory
-    else:
-        raise ValueError(f"Unknown STDP rule: {stdp_rule}")
+        elif stdp_rule == 'stdp_pl_synapse_hom':
+            for syn_i in range(1, N+1):
+                w_init = init_weights_list[syn_i-1]
+                w_final, trajectory = stdp_pl_synapse_hom(
+                    pre_spikes_dict[syn_i],
+                    post_spikes_dict[syn_i],
+                    arrived_pre_dict[syn_i],
+                    arrived_post_dict[syn_i],
+                    tau_plus_ms, lambda_pmt, alpha, mu, w_0,
+                    w_init,
+                    writer,
+                    synapse_id=syn_i,
+                    initial_time_for_plot_ms=global_min_time_ms
+                )
+                final_weights[syn_i-1] = w_final
+                synapses_trajectories[syn_i] = trajectory
+
+    print(f"STDP summary logged to {summary_file}")
 
     # 6) Final diagnostic print
     print("--------------------------------------------------")
@@ -401,8 +428,8 @@ def test_stdp_main():
     for syn_i in range(1, N+1):
         w_init  = init_weights_list[syn_i-1]
         w_final = final_weights[syn_i-1]
-        axon_delay_ms  = safe_get_list_item(axonal_delays_list,   syn_i-1, 5.0)
-        dend_delay_ms  = safe_get_list_item(dendritic_delays_list,syn_i-1, 0.1)
+        axon_delay_ms  = safe_get_list_item(axonal_delays_list,   syn_i-1, axon_default)
+        dend_delay_ms  = safe_get_list_item(dendritic_delays_list,syn_i-1, dend_default)
 
         # #changes = #pre spikes * #post spikes
         num_changes = (len(pre_spikes_dict[syn_i]) *
@@ -430,7 +457,7 @@ def test_stdp_main():
                 events_str.append(evt_str)
             all_events_line = " ".join(events_str)
         else:
-            all_events_line = "No step-by-step data (spec_stdp)"
+            all_events_line = "No step-by-step data"
 
         line = (f"Synapse {syn_i}: "
                 f"axon_delay_ms={axon_delay_ms}, dend_delay_ms={dend_delay_ms}, "
@@ -440,8 +467,6 @@ def test_stdp_main():
     print("--------------------------------------------------")
 
     # 7) Raster: we want to show *arrival times* in the plots
-    #    Let's rename arrived_pre_dict -> pre_raster_dict, etc.
-    #    so we pass them directly to the plot. 
     pre_raster_dict  = arrived_pre_dict
     post_raster_dict = arrived_post_dict
 
@@ -451,6 +476,7 @@ def test_stdp_main():
     # 8) Synaptic evolution
     plot_synaptic_evolution(synapses_trajectories,
                             global_min_time_ms, global_max_time_ms)
+
     return
 
 
