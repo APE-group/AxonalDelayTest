@@ -58,7 +58,8 @@ def load_spikes_post(csv_file, N):
     Post neurons: N+1..2N
 
     Returns:
-      post_spikes_dict : { i: list of float spike_time_ms }   (i in 1..N => post neuron = i+N)
+      post_spikes_dict : { i: list of float spike_time_ms }
+                         (i in 1..N => actual post neuron = i+N)
       all_spike_times_ms
       all_neuron_ids
     """
@@ -102,21 +103,16 @@ def stdp_pl_synapse_hom_causal(
 ):
     """
     A "chronological" and "causal" version of the pl_synapse_hom rule.
-    1) We gather *all pairs* (pre_spike, post_spike).
-    2) For each pair, define:
-         if dt>0 => event_time = post_arr,
-                   dW = +...
-         if dt<0 => event_time = pre_arr,
-                   dW = -...
-    3) We sort all events by event_time in ascending order.
-    4) For each negative event that shares the same pre spike *and same event_time*,
-       we sum up the negative dW in a lumpsum. We log each event individually,
-       but do not update the weight in between. Then at the end of that lumpsum group,
-       we apply the total negative change at once.
-    5) For positive events, we update the weight immediately.
 
-    We store every event as a 7-item tuple:
-      (pre_spike_ms, post_spike_ms, pre_arr_ms, post_arr_ms, dt_ms, dW, w_after).
+    1) Gather all pre–post pairs for this synapse => build a list of events.
+       For dt>0 => event_time = post_arr; for dt<0 => event_time = pre_arr.
+    2) Sort by event_time ascending.
+    3) LTP (dt>0) => immediate update: log each event with w_before, w_after.
+    4) LTD (dt<0) => lumpsum approach:
+         - log each partial negative event with w_after=None (since no real update yet),
+         - after finishing that lumpsum group, produce one lumpsum line with the real new weight.
+    5) We store 8 items in each event:
+         (pre_s, post_s, pre_a, post_a, dt_ms, w_before, dW, w_after)
     """
 
     pre_times_raw   = pre_spikes_dict[syn_id]
@@ -129,15 +125,11 @@ def stdp_pl_synapse_hom_causal(
 
     # Write an initial row => no real spikes
     writer.writerow([syn_id, 0, None, None, None, None, None, 0.0, w])
-    trajectory.append((None, None, None, None, 0.0, 0.0, w))
+    # We store an 8-tuple => the partial final is None for this "fake" row
+    trajectory.append((None, None, None, None, 0.0, 0.0, 0.0, w))
 
     # Build a global list of all pairs
-    # We'll store: (event_time, is_ltp, pre_index, post_index, dt_ms)
-    #   is_ltp is True if dt>0, else False
-    #   event_time = post_arr if dt>0, else pre_arr if dt<0
-    #   We also store the raw times so we can compute the dW formula
     all_events = []
-
     for i_pre, pre_t_raw in enumerate(pre_times_raw):
         pre_t_arr = pre_times_arr[i_pre]
 
@@ -149,10 +141,12 @@ def stdp_pl_synapse_hom_causal(
                 # LTP => immediate => event_time = post_t_arr
                 event_time = post_t_arr
             else:
-                # LTD => lumps => event_time = pre_t_arr
+                # dt<=0 => lumps => event_time = pre_t_arr
                 event_time = pre_t_arr
 
-            all_events.append((event_time, i_pre, j_post, dt_ms,
+            all_events.append((event_time,
+                               i_pre, j_post,
+                               dt_ms,
                                pre_t_raw, post_t_raw,
                                pre_t_arr, post_t_arr))
 
@@ -160,85 +154,116 @@ def stdp_pl_synapse_hom_causal(
     all_events.sort(key=lambda x: x[0])
 
     event_idx = 1
+    i = 0
+    n_ev = len(all_events)
 
-    # We'll iterate in ascending order, applying lumps for negative events that share
-    # the same syn_id, same pre spike, same event_time.
-    idx = 0
-    n_events = len(all_events)
-    while idx < n_events:
-        (current_time, i_pre, j_post, dt_ms,
+    while i < n_ev:
+        (ev_time, i_pre, j_post, dt_ms,
          pre_t_raw, post_t_raw,
-         pre_t_arr, post_t_arr) = all_events[idx]
+         pre_t_arr, post_t_arr) = all_events[i]
 
         if dt_ms > 0:
             # LTP => immediate
-            # formula from pl_synapse_hom for dt>0
+            w_before = w
             dW = (lambda_pmt *
                   (w_0**(1 - mu)) *
                   (w**mu) *
                   np.exp(-dt_ms / tau_plus_ms))
-            w_new = w + dW
+            w_after = w_before + dW
 
-            # Log
+            # CSV line => 10 columns:
+            # syn_id, event_idx, pre_s, post_s, pre_arr, post_arr, dt_ms, w_before, dW, w_after
             writer.writerow([
                 syn_id, event_idx,
                 pre_t_raw, post_t_raw,
                 pre_t_arr, post_t_arr,
-                dt_ms, dW, w_new
+                dt_ms,
+                w_before,
+                dW,
+                w_after
             ])
+            # Store 8 items => (pre_s, post_s, pre_a, post_a, dt_ms, w_before, dW, w_after)
             trajectory.append((
                 pre_t_raw, post_t_raw,
                 pre_t_arr, post_t_arr,
-                dt_ms, dW, w_new
+                dt_ms,
+                w_before,
+                dW,
+                w_after
             ))
 
-            w = w_new
+            w = w_after
             event_idx += 1
-            idx += 1
+            i += 1
 
         else:
-            # dt_ms <= 0 => negative => lumps
-            # We'll gather all consecutive negative events for the same event_time
-            # and the same i_pre (the same pre spike).
+            # dt_ms <= 0 => lumpsum of negative changes
             lumpsum = 0.0
-            negative_batch = []
+            w_before = w
+            batch_time = ev_time
+            batch_pre_idx = i_pre
 
-            # We'll keep reading consecutive negative events with the same
-            # pre arrival time = current_time, same i_pre, same syn_id
-            this_pre_arr = pre_t_arr
-
-            while idx < n_events:
-                (etm, i_pre2, j_post2, dt2,
+            negative_events = []
+            # gather consecutive negative events with the same event_time + same i_pre
+            while i < n_ev:
+                (ev_t2, i_pre2, j_post2, dt2,
                  pr2_raw, po2_raw,
-                 pr2_arr, po2_arr) = all_events[idx]
-
-                if (etm == current_time and i_pre2 == i_pre and dt2 <= 0):
-                    # part of the lumpsum
-                    # formula for dt<0
+                 pr2_arr, po2_arr) = all_events[i]
+                if (ev_t2 == batch_time) and (i_pre2 == batch_pre_idx) and (dt2 <= 0):
                     dW_2 = -lambda_pmt * alpha * w * np.exp(dt2 / tau_plus_ms)
+                    negative_events.append((pr2_raw, po2_raw, pr2_arr, po2_arr, dt2, dW_2))
                     lumpsum += dW_2
-
-                    # We'll log each negative event individually with partial w, but not apply it
-                    w_temp = w + dW_2  # partial
-                    writer.writerow([
-                        syn_id, event_idx,
-                        pr2_raw, po2_raw,
-                        pr2_arr, po2_arr,
-                        dt2, dW_2, w_temp
-                    ])
-                    trajectory.append((
-                        pr2_raw, po2_raw,
-                        pr2_arr, po2_arr,
-                        dt2, dW_2, w_temp
-                    ))
-
-                    idx += 1
-                    event_idx += 1
+                    i += 1
                 else:
                     break
 
-            # after we finish that batch => apply lumpsum
-            w = w + lumpsum
+            # Log each negative event individually => w_after=None
+            for (pr2_raw, po2_raw, pr2_arr, po2_arr, dt2, dW_2) in negative_events:
+                # partial line => no real w update
+                writer.writerow([
+                    syn_id, event_idx,
+                    pr2_raw, po2_raw,
+                    pr2_arr, po2_arr,
+                    dt2,
+                    w_before,  # same for each partial line
+                    dW_2,
+                    None        # we show "None" => no update
+                ])
+                trajectory.append((
+                    pr2_raw, po2_raw,
+                    pr2_arr, po2_arr,
+                    dt2,
+                    w_before,
+                    dW_2,
+                    None   # partial negative => no real final weight
+                ))
+                event_idx += 1
+
+            # Now apply the lumpsum
+            w_after_lumpsum = w_before + lumpsum
+            # We'll do a lumpsum line => dt=0 or "LUMPSUM"
+            lumpsum_dt = 0.0
+
+            writer.writerow([
+                syn_id, event_idx,
+                pre_t_raw, None,  # we can omit post spike info here
+                pre_t_arr, None,
+                lumpsum_dt,
+                w_before,
+                lumpsum,
+                w_after_lumpsum
+            ])
+            trajectory.append((
+                pre_t_raw, None,
+                pre_t_arr, None,
+                lumpsum_dt,
+                w_before,
+                lumpsum,
+                w_after_lumpsum
+            ))
+            event_idx += 1
+
+            w = w_after_lumpsum
 
     return w, trajectory
 
@@ -252,8 +277,12 @@ def get_synapse_color(syn_id):
 
 def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms):
     """
-    We'll define the 'time of event' as either post_arr if dt>0 or pre_arr if dt<0,
-    but we do that again in post-processing from the 7-tuple.
+    We'll define the 'time_of_event' as post_arr if dt>0, or pre_arr if dt<0.
+    For lumpsum line => dt=0 => we can pick the pre_arr time or the lumpsum time.
+    Each event in the trajectory is:
+      (pre_spike_ms, post_spike_ms, pre_arr_ms, post_arr_ms, dt_ms, w_before, dW, w_after)
+    If w_after=None => partial negative => no real update time.
+    If lumpsum line => dt=0 => we might use pre_arr as the update time.
     """
     plt.figure()
     for syn_id, trajectory in synapses_trajectories.items():
@@ -264,26 +293,31 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms):
         weights  = []
 
         for evt in trajectory:
-            # 7 items => (pre_s, post_s, pre_a, post_a, dt_ms, dW, w_after)
-            pre_s, post_s, pre_a, post_a, dt_ms, dW, w_after = evt
+            # 8 items
+            (p_s, po_s, p_a, po_a, dt_ms, wB, dW, wA) = evt
 
-            if (pre_s is None) and (post_s is None):
-                # The "fake" row
+            if p_s is None and po_s is None:
+                # initial row => use time_min
                 times_ms.append(time_min_ms)
-                weights.append(w_after)
+                weights.append(wA)
             else:
-                if dt_ms > 0:
-                    # LTP => time = post_a
-                    times_ms.append(post_a)
+                if wA is None:
+                    # partial negative => we could skip it or put a partial time
+                    # let's skip it from the curve
+                    continue
                 else:
-                    # LTD => time = pre_a
-                    times_ms.append(pre_a)
-                weights.append(w_after)
+                    # either LTP or lumpsum => dt>0 => time=po_a, dt<0 => time= p_a, dt=0 => lumpsum => p_a
+                    if dt_ms > 0:
+                        times_ms.append(po_a)
+                    else:
+                        # lumpsum => or dt<0 => use pre_a
+                        times_ms.append(p_a if p_a is not None else time_min_ms)
+                    weights.append(wA)
 
         color = get_synapse_color(syn_id)
         plt.plot(times_ms, weights, label=f"Syn {syn_id}", color=color, marker='o')
 
-    plt.title("Synaptic Evolution (Causal pl_synapse_hom, Chronological)")
+    plt.title("Synaptic Evolution (Causal lumpsum, partial negative lines omitted from curve)")
     plt.xlabel("Time (ms)")
     plt.ylabel("Weight")
     plt.xlim(time_min_ms, time_max_ms)
@@ -342,9 +376,9 @@ def test_stdp_main():
       1) Reads config,
       2) Loads spikes,
       3) Applies single 'stdp_pl_synapse_hom_causal' rule in chronological order,
-      4) Logs results to 'stdp_summary.csv',
+      4) Logs results to 'stdp_summary.csv' (with lumpsum line),
       5) Prints final summary,
-      6) Plots rasters & weight evolution.
+      6) Plots rasters & weight evolution, skipping partial negative lines.
     """
     with open("config_check_stdp.yaml", "r") as f:
         config = yaml.safe_load(f)
@@ -381,8 +415,11 @@ def test_stdp_main():
     arrived_post_dict = {}
 
     for i in range(1, N+1):
-        axon_d   = safe_get_list_item(axonal_delays_list, i-1, axon_default)
-        dend_d   = safe_get_list_item(dendritic_delays_list, i-1, dend_default)
+        axon_d_str   = safe_get_list_item(axonal_delays_list,   i-1, axon_default)
+        dend_d_str   = safe_get_list_item(dendritic_delays_list, i-1, dend_default)
+        # ensure float
+        axon_d  = float(axon_d_str)
+        dend_d  = float(dend_d_str)
 
         arrived_pre_dict[i]  = [t + axon_d for t in pre_spikes_dict[i]]
         arrived_post_dict[i] = [t + dend_d for t in post_spikes_dict[i]]
@@ -399,20 +436,29 @@ def test_stdp_main():
         global_min_time_ms = min(arrived_all) - 10
         global_max_time_ms = max(arrived_all) + 10
 
-    # Run the "causal pl_synapse_hom"
+    # Run the "causal pl_synapse_hom" rule
     final_weights = [0.0]*N
     synapses_trajectories = {}
 
     summary_file = "stdp_summary.csv"
     with open(summary_file, "w", newline="") as f_out:
         writer = csv.writer(f_out)
-        # 9 columns: syn_id, event_idx,
-        #   pre_spike_ms, post_spike_ms, pre_arrived_ms, post_arrived_ms, dt_ms, dW, w
+        # 10 columns:
+        # syn_id, event_idx,
+        # pre_spike_ms, post_spike_ms,
+        # pre_arrived_ms, post_arrived_ms,
+        # dt_ms,
+        # w_before,
+        # dW,
+        # w_after
         writer.writerow([
             "synapse_id", "event_idx",
             "pre_spike_ms", "post_spike_ms",
             "pre_arrived_ms", "post_arrived_ms",
-            "dt_ms", "dW", "W"
+            "dt_ms",
+            "w_before",
+            "dW",
+            "w_after"
         ])
 
         event_idx_counter = 1
@@ -432,52 +478,56 @@ def test_stdp_main():
 
     print(f"CAUSAL pl_synapse_hom summary logged to {summary_file}")
 
-    # Final diagnostic summary
+    # Final diagnostics
     print("--------------------------------------------------")
-    print("FINAL DIAGNOSTIC SUMMARY (Causal pl_synapse_hom, Chronological)")
+    print("FINAL DIAGNOSTIC SUMMARY (Causal pl_synapse_hom with lumpsum line, partial negative => w_after=None)")
 
     for syn_i in range(1, N+1):
         w_init  = init_weights_list[syn_i-1]
         w_final = final_weights[syn_i-1]
 
-        axon_d   = safe_get_list_item(axonal_delays_list,   syn_i-1, axon_default)
-        dend_d   = safe_get_list_item(dendritic_delays_list, syn_i-1, dend_default)
+        # get delays
+        axon_d_str   = safe_get_list_item(axonal_delays_list, syn_i-1, axon_default)
+        dend_d_str   = safe_get_list_item(dendritic_delays_list,syn_i-1,dend_default)
+        axon_d  = float(axon_d_str)
+        dend_d  = float(dend_d_str)
 
-        num_changes = (len(pre_spikes_dict[syn_i]) *
-                       len(post_spikes_dict[syn_i]))
+        pre_count  = len(pre_spikes_dict[syn_i])
+        post_count = len(post_spikes_dict[syn_i])
+        num_changes = pre_count * post_count
 
         trajectory = synapses_trajectories[syn_i]
         if trajectory:
             events_str = []
             for evt in trajectory:
-                # 7 items => (pre_spike_ms, post_spike_ms, pre_arr_ms, post_arr_ms, dt_ms, dW, w_after)
+                # 8 items => (pre_s, post_s, pre_a, post_a, dt, w_before, dW, w_after)
                 if evt[0] is None and evt[1] is None:
                     # The "fake" row
                     wA = evt[-1]
                     evt_str = f"(NoSpikes, dt_ms=0.000, dW=0.000, W={wA:.3f})"
                 else:
-                    (p_s, po_s, p_a, po_a, dt_m, dW, wA) = evt
+                    (p_s, po_s, p_a, po_a, dt_m, wB, dW, wA) = evt
+                    # if wA is None => partial negative
+                    wA_str = f"{wA:.3f}" if wA is not None else "None"
                     evt_str = (
                         f"(pre_spike_ms={p_s}, post_spike_ms={po_s}, "
                         f"pre_arr_ms={p_a}, post_arr_ms={po_a}, "
-                        f"dt_ms={dt_m:.3f}, dW={dW:.3f}, W={wA:.3f})"
+                        f"dt_ms={dt_m:.3f}, w_before={wB:.3f}, dW={dW:.3f}, w_after={wA_str})"
                     )
                 events_str.append(evt_str)
             all_events_line = " ".join(events_str)
         else:
             all_events_line = "No step-by-step data"
 
-        line = (f"Synapse {syn_i}: "
-                f"axon_delay_ms={axon_d}, dend_delay_ms={dend_d}, "
+        line = (f"Synapse {syn_i}: axon_delay_ms={axon_d}, dend_delay_ms={dend_d}, "
                 f"#changes={num_changes}, init={w_init:.3f}, final={w_final:.3f} => "
                 f"{all_events_line}")
         print(line)
-
     print("--------------------------------------------------")
 
     # Rasters with arrival times
     plot_pre_raster(arrived_pre_dict,  N, global_min_time_ms, global_max_time_ms)
     plot_post_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms)
 
-    # Synaptic evolution
+    # Weight evolution
     plot_synaptic_evolution(synapses_trajectories, global_min_time_ms, global_max_time_ms)
