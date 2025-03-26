@@ -1,7 +1,7 @@
 import os
 import matplotlib as plt
 from get_script_dir import *
-from test_stdp import *
+from test_STDP_lib import *
 
 if __name__ == "__main__":
     current_dir = get_script_dir()
