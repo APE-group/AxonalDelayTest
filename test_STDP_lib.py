@@ -318,7 +318,7 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
     plt.ylabel("Weight")
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
-    plt.show()
+    #plt.show()
 
 
 def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
@@ -342,7 +342,7 @@ def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
     # set integer ticks from start_syn..end_syn
     plt.yticks(range(start_syn, end_syn+1))
     plt.legend()
-    plt.show()
+    #plt.show()
 
 
 def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
@@ -367,7 +367,7 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
     # only integer IDs from (start_syn+N)..(end_syn+N)
     plt.yticks(range(start_syn+N, end_syn+N+1))
     plt.legend()
-    plt.show()
+    #plt.show()
 
 
 ###############################################################################
@@ -497,7 +497,8 @@ def test_stdp_main(config_check_stdp_filename):
     # 5) Final diagnostics: only for synapses in [start_syn..end_syn]
     print("--------------------------------------------------")
     print(f"FINAL DIAGNOSTIC SUMMARY (Causal lumpsum STDP). Printing synapses {start_syn}..{end_syn}")
-
+    returned_syn_evolution_dictionary={}
+    returned_syn_evolution_dictionary
     for syn_i in range(1, N+1):
         if syn_i < start_syn or syn_i > end_syn:
             continue
