@@ -1,7 +1,9 @@
 N: 4
+start_synapse: 2
+end_synapse: 3
 csv_file_pre: 'spikes_pre_neurons.csv'
 csv_file_post: 'spikes_post_neurons.csv'
-
+verbose_summary: True
 stdp_rule: 'stdp_pl_synapse_hom_causal'
 tau_plus_ms: 20
 lambda_pmt: 0.9
