@@ -45,7 +45,7 @@ def compare_csv_files(csv_file_1, csv_file_2, threshold=1e-8):
 if __name__ == "__main__":
     # sim 1)
     current_dir = get_script_dir()
-    config_file = os.path.join(current_dir, "config_sim_STDP.yaml")
+    config_file = os.path.join(current_dir, "config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
     df_w, sim_summary = run_stdp_alpha_forced_pl(config_file)
     #print("df_w",df_w)
     
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     print(f"Simulation summary saved to {output_sim_csv}.")
 
     # prediction 1) Run the STDP routine, which returns a dictionary
-    config_check_stdp_filename = "config_check_STDP.yaml"
+    config_check_stdp_filename = "config_sim_test_Ax_and_Dendr_Delay_STDP.yaml"
     config_file = os.path.join(current_dir, config_check_stdp_filename)
     prediction_summary = test_stdp_main(config_file)
     

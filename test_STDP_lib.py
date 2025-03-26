@@ -389,14 +389,14 @@ def test_stdp_main(config_check_stdp_filename):
     with open(config_check_stdp_filename, "r") as f:
         config = yaml.safe_load(f)
 
-    N = config["N"]
+    N = config["Total_number_described_synapses_for_sim"]
     csv_file_pre  = config["csv_file_pre"]
     csv_file_post = config["csv_file_post"]
 
     # If user doesn't specify, default to [1..N]
     start_syn = config.get("start_synapse", 1)
     end_syn   = config.get("end_synapse", N)
-    verbose_summary = config.get("verbose_summary", True)
+    verbose_prediction_summary = config.get("verbose_prediction_summary", True)
 
     # Validate range
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
@@ -405,14 +405,17 @@ def test_stdp_main(config_check_stdp_filename):
         raise ValueError(f"Invalid synapse range: start={start_syn}, end={end_syn}, must be in [1..{N}] and start<=end.")
 
     # pl_synapse_hom STDP parameters
-    tau_plus_ms  = config.get("tau_plus_ms", 20.0)
-    lambda_pmt   = config.get("lambda_pmt", 0.9)
-    alpha        = config.get("alpha", 0.11)
-    mu           = config.get("mu", 0.4)
-    w_0          = config.get("w_0", 1.0)
+    
+    stdp_params  = config["stdp_params"]
+                              
+    tau_plus_ms  = stdp_params["tau_plus"]
+    lambda_pmt   = stdp_params["lambda"]
+    alpha        = stdp_params["alpha"]
+    mu           = stdp_params["mu"]
+    w_0          = config["w_0"]
 
     # Delays & Weights
-    init_weights_list     = config.get("initial_weights", None)
+    init_weights_list     = config.get("W_init", None)
     axonal_delays_list    = config.get("axonal_delays_ms", None)
     dendritic_delays_list = config.get("dendritic_delays_ms", None)
 
@@ -543,7 +546,7 @@ def test_stdp_main(config_check_stdp_filename):
         else:
             all_events_line = "No step-by-step data"
 
-        if verbose_summary:
+        if verbose_prediction_summary:
             line = (f"Synapse {syn_i}: axon_delay_ms={axon_d:.3f}, dend_delay_ms={dend_d:.3f}, "
                 f"#changes={num_changes}, init={w_init:.5f}, final={w_final:.5f} => "
                 f"{all_events_line}")

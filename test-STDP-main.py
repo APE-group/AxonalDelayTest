@@ -7,7 +7,7 @@ from test_STDP_lib import *
 if __name__ == "__main__":
     # prediction 1) Determine the path to your config file
     current_dir = get_script_dir()
-    config_check_stdp_filename = "config_check_STDP.yaml"
+    config_check_stdp_filename = "config_sim_test_Ax_and_Dendr_Delay_STDP.yaml"
     config_file = os.path.join(current_dir, config_check_stdp_filename)
     
     # prediction 2) Run the STDP routine, which returns a dictionary

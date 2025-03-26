@@ -20,11 +20,15 @@ def run_stdp_alpha_forced_pl(config_file):
     with open(config_file, 'r') as f:
         cfg = yaml.safe_load(f)
     
-    verbose               = cfg["verbose"]
+    verbose               = cfg["verbose_sim"]
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
     N                     = cfg["Total_number_described_synapses_for_sim"]
 
+    # If user doesn't specify, default to [1..N]
+    start_syn             = cfg.get("start_synapse", 1)
+    end_syn               = cfg.get("end_synapse", N)
+    
     spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
     spike_train_post_ms   = cfg["spike_train_post_ms"]  
 
@@ -34,9 +38,10 @@ def run_stdp_alpha_forced_pl(config_file):
         axonal_delay      = cfg["axonal_delay_ms"]
     else:
         delay             = cfg["dendritic_delay_ms"]
-    W0                    = cfg["W0"]
+    W_init                = cfg["W_init"]
 
-    stdp_params           = cfg.get("stdp_params", {})
+    stdp_params           = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
+                                                    "alpha": 0.11, "mu": 0.4})
     forced_in_weight      = cfg.get("forced_in_weight",  1000.0)
     forced_out_weight     = cfg.get("forced_out_weight", 1000.0)
 
@@ -46,6 +51,12 @@ def run_stdp_alpha_forced_pl(config_file):
     plot_mm               = cfg["plot_mm"]
     mm_pre                = cfg["mm_pre"]
     mm_post               = cfg["mm_post"]
+
+    # Validate range
+    if not isinstance(start_syn, int) or not isinstance(end_syn, int):
+        raise ValueError("start_synapse and end_synapse must be integers.")
+    if start_syn < 1 or end_syn > N or start_syn > end_syn:
+        raise ValueError(f"Invalid synapse range: start={start_syn}, end={end_syn}, must be in [1..{N}] and start<=end.")
     
     #--------------------------------------------------------------------------
     # Reset and configure NEST kernel
@@ -141,7 +152,7 @@ def run_stdp_alpha_forced_pl(config_file):
                 {"rule": "one_to_one"},
                 {
                     "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
-                    "weight": W0[i],
+                    "weight": W_init[i],
                     "dendritic_delay": dendritic_delay[i],
                     "axonal_delay": axonal_delay[i]
                 }
@@ -153,7 +164,7 @@ def run_stdp_alpha_forced_pl(config_file):
                 {"rule": "one_to_one"},
                 {
                     "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
-                    "weight": W0[i],
+                    "weight": W_init[i],
                     "delay": delay[i]
                 }
             )            
@@ -322,7 +333,7 @@ def run_stdp_alpha_forced_pl(config_file):
     
     sim_summary = {}
     
-    for syn_i in range(1, N+1):
+    for syn_i in range(start_syn, end_syn+1):
            sim_summary[syn_i] = {
             "syn_ID": syn_i,
                "start_syn_value": df_w[f"w_{syn_i-1}"].loc[0],
