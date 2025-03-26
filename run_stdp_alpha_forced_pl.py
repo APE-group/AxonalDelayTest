@@ -23,17 +23,17 @@ def run_stdp_alpha_forced_pl(config_file):
     verbose               = cfg["verbose"]
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
-    N                     = cfg["N"]
+    N                     = cfg["Total_number_described_synapses_for_sim"]
 
     spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
     spike_train_post_ms   = cfg["spike_train_post_ms"]  
 
     axonal_support        = cfg["axonal_support"]
     if axonal_support:
-        dendritic_delay   = cfg["dendritic_delay"]
-        axonal_delay      = cfg["axonal_delay"]
+        dendritic_delay   = cfg["dendritic_delay_ms"]
+        axonal_delay      = cfg["axonal_delay_ms"]
     else:
-        delay             = cfg["dendritic_delay"]
+        delay             = cfg["dendritic_delay_ms"]
     W0                    = cfg["W0"]
 
     stdp_params           = cfg.get("stdp_params", {})

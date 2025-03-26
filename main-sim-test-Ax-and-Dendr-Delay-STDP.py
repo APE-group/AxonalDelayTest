@@ -81,8 +81,7 @@ if __name__ == "__main__":
         print("Both CSV files match within threshold.")
     else:
         print("Mismatch found above threshold.")
-
-
+        assert("MISMATCH DETECTED")
 
     # Show all plots
     plt.show()
