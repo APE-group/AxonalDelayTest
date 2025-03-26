@@ -380,7 +380,7 @@ def test_stdp_main(config_check_stdp_filename):
       1) Reads config,
       2) Loads spikes,
       3) Applies single 'stdp_pl_synapse_hom_causal' rule in chronological order (for all synapses),
-      4) Logs results to 'stdp_summary.csv' (with lumpsum line),
+      4) Logs results to 'stdp_evolution_line_summary.csv' (with lumpsum line),
       5) Prints final summary, but only for synapses in [start_syn..end_syn] (defaults to 1..N).
       6) The pre/post raster plots and synaptic evolution plot also only show synapses in [start_syn..end_syn].
       7) Raises ValueError if start_synapse/end_synapse are out of [1..N] or start> end.
@@ -457,7 +457,7 @@ def test_stdp_main(config_check_stdp_filename):
     final_weights = [0.0]*N
     synapses_trajectories = {}
 
-    summary_file = "stdp_summary.csv"
+    summary_file = "stdp_evolution_line_summary.csv"
     with open(summary_file, "w", newline="") as f_out:
         writer = csv.writer(f_out)
         # 10 columns:
@@ -517,10 +517,7 @@ def test_stdp_main(config_check_stdp_filename):
         analysis_summary[syn_i] = {
             "syn_ID": syn_i,
             "start_syn_value": w_init,
-            "final_syn_value": w_final,
-            "axonal_delay": axon_d,
-            "dendritic_delay": dend_d,
-            "num_changes": num_changes
+            "final_syn_value": w_final
         }
 
 
