@@ -12,6 +12,5 @@ if __name__ == "__main__":
     config_check_stdp_filename = "config_check_STDP.yaml"
     config_file = os.path.join(current_dir, config_check_stdp_filename)
     test_stdp_main(config_check_stdp_filename)
-    test_stdp_main()
     plt.show()
     
