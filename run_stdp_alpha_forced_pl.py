@@ -318,5 +318,15 @@ def run_stdp_alpha_forced_pl(config_file):
                 if i==0:
                     plt.title('POST-neurons')
             plt.xlabel('Time [ms]')
-   
-    return df_w
+
+    
+    sim_summary = {}
+    
+    for syn_i in range(1, N+1):
+           sim_summary[syn_i] = {
+            "syn_ID": syn_i,
+               "start_syn_value": df_w[f"w_{syn_i-1}"].loc[0],
+            "final_syn_value": df_w[f"w_{syn_i-1}"].loc[len(df_w)-1]
+           }
+    
+    return df_w, sim_summary
