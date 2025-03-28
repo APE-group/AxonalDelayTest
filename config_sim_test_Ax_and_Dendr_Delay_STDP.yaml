@@ -4,6 +4,11 @@ axonal_support: True
 verbose_sim: True
 verbose_prediction_summary: True
 
+sim_plot_save: False
+prediction_plot_save: True
+
+plot_display: False
+
 # Params for STDP check (prediction vs simulation)
 csv_file_pre: 'spikes_pre_neurons.csv'
 csv_file_post: 'spikes_post_neurons.csv'

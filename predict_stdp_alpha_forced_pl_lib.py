@@ -324,7 +324,7 @@ def get_synapse_color(syn_id):
     return f"C{syn_id - 1}"
 
 def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
-                            start_syn, end_syn):
+                            start_syn, end_syn, prediction_plot_save):
     """
     We'll define 'time_of_event' as post_arr if dt>0, or pre_arr if dt<0,
     lumpsum line => dt=0 => we might use pre_arr.
@@ -371,9 +371,11 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
     # no plt.show() here, user does it in main script
+    if prediction_plot_save:
+        plt.savefig("predicted_synaptic_evolution.png")
 
 def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
-                    start_syn, end_syn):
+                    start_syn, end_syn, prediction_plot_save):
     """
     Raster for *pre-synaptic* neurons, only synapses in [start_syn..end_syn].
     We'll set integer y-ticks from start_syn..end_syn only.
@@ -392,10 +394,12 @@ def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
     plt.xlim(time_min_ms, time_max_ms)
     plt.yticks(range(start_syn, end_syn+1))
     plt.legend()
+    if prediction_plot_save:
+        plt.savefig("predicted_presyn_rastegram.png")
     # no plt.show()
 
 def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
-                     start_syn, end_syn):
+                     start_syn, end_syn, prediction_plot_save):
     """
     Raster for *post-synaptic* neurons in [start_syn..end_syn].
     We'll set integer y-ticks from (start_syn+N)..(end_syn+N).
@@ -415,13 +419,15 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
     plt.xlim(time_min_ms, time_max_ms)
     plt.yticks(range(start_syn+N, end_syn+N+1))
     plt.legend()
+    if prediction_plot_save:
+        plt.savefig("predicted_postsyn_rastegram.png")
     # no plt.show()
 
 ###############################################################################
 # Main
 ###############################################################################
 
-def test_stdp_main(config_check_stdp_filename):
+def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
     """
     1) Read config,
     2) Load spikes,
@@ -435,6 +441,8 @@ def test_stdp_main(config_check_stdp_filename):
     import yaml
     with open(config_check_stdp_filename, "r") as f:
         config = yaml.safe_load(f)
+
+    prediction_plot_save         = config["prediction_plot_save"]
 
     N             = config["Total_number_described_synapses_for_sim"]
     csv_file_pre  = config["csv_file_pre"]
@@ -561,8 +569,11 @@ def test_stdp_main(config_check_stdp_filename):
     print("--------------------------------------------------")
 
     # Plot
-    plot_pre_raster(arrived_pre_dict,   N, global_min_time_ms, global_max_time_ms, start_syn, end_syn)
-    plot_post_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms, start_syn, end_syn)
-    plot_synaptic_evolution(synapses_trajectories, global_min_time_ms, global_max_time_ms, start_syn, end_syn)
+    plot_pre_raster(arrived_pre_dict,   N, global_min_time_ms, global_max_time_ms,
+                    start_syn, end_syn, prediction_plot_save)
+    plot_post_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms,
+                     start_syn, end_syn, prediction_plot_save)
+    plot_synaptic_evolution(synapses_trajectories, global_min_time_ms, global_max_time_ms,
+                            start_syn, end_syn, prediction_plot_save)
 
     return analysis_summary

@@ -4,7 +4,7 @@ import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def run_stdp_alpha_forced_pl(config_file):
+def sim_stdp_alpha_forced_pl(config_file):
     """
     For each synapse n:
       - PRE-neuron: iaf_psc_alpha(high threshold), forced by spike_generator_in.
@@ -21,6 +21,9 @@ def run_stdp_alpha_forced_pl(config_file):
         cfg = yaml.safe_load(f)
     
     verbose               = cfg["verbose_sim"]
+    sim_plot_save         = cfg["sim_plot_save"]
+    plot_display          = cfg["plot_display"]
+
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
     N                     = cfg["Total_number_described_synapses_for_sim"]
@@ -272,7 +275,8 @@ def run_stdp_alpha_forced_pl(config_file):
     plt.title("STDP with stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
 
     plt.tight_layout()
-    plt.savefig("weights_alpha_forced_pl.png", dpi=150)
+    if sim_plot_save:
+        plt.savefig("sim_weights_alpha_forced_pl.png", dpi=150)
     print("Saved synaptic weight plot to 'weights_alpha_forced_pl.png'")
 
     #--------------------------------------------------------------------------
@@ -297,7 +301,8 @@ def run_stdp_alpha_forced_pl(config_file):
     plt.title('Raster: POST (iaf_psc_alpha)')
 
     plt.tight_layout()
-    plt.savefig("raster_alpha_forced_pl.png", dpi=150)
+    if sim_plot_save:
+        plt.savefig("sim_raster_alpha_forced_pl.png", dpi=150)
     print("Saved spike raster to 'raster_alpha_forced_pl.png'")
 
     #--------------------------------------------------------------------------
@@ -339,5 +344,5 @@ def run_stdp_alpha_forced_pl(config_file):
                "start_syn_value": df_w[f"w_{syn_i-1}"].loc[0],
             "final_syn_value": df_w[f"w_{syn_i-1}"].loc[len(df_w)-1]
            }
-    
-    return df_w, sim_summary
+
+    return df_w, sim_summary, plot_display

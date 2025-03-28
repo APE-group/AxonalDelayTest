@@ -1,8 +1,8 @@
 import os
 import matplotlib as plt
 from get_script_dir import *
-from run_stdp_alpha_forced_pl import *
-from test_STDP_lib import *
+from sim_stdp_alpha_forced_pl_lib import sim_stdp_alpha_forced_pl
+from predict_stdp_alpha_forced_pl_lib import predict_stdp_alpha_forced_pl
 
 def compare_csv_files(csv_file_1, csv_file_2, threshold=1e-8):
     """
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # sim 1)
     current_dir = get_script_dir()
     config_file = os.path.join(current_dir, "config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
-    df_w, sim_summary = run_stdp_alpha_forced_pl(config_file)
+    df_w, sim_summary, plot_display = sim_stdp_alpha_forced_pl(config_file)
     #print("df_w",df_w)
     
     # sim 2) Convert the dictionary to a Pandas DataFrame
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # prediction 1) Run the STDP routine, which returns a dictionary
     config_check_stdp_filename = "config_sim_test_Ax_and_Dendr_Delay_STDP.yaml"
     config_file = os.path.join(current_dir, config_check_stdp_filename)
-    prediction_summary = test_stdp_main(config_file)
+    prediction_summary = predict_stdp_alpha_forced_pl(config_file)
     
     # prediction 2) Convert the dictionary to a Pandas DataFrame
     #    Each dictionary entry has keys: ["syn_ID", "start_syn_value", "final_syn_value",
@@ -84,5 +84,6 @@ if __name__ == "__main__":
         assert("MISMATCH DETECTED")
 
     # Show all plots
-    plt.show()
+    if plot_display:
+        plt.show()
     
