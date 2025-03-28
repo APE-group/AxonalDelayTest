@@ -1,8 +1,8 @@
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 axonal_support: True
 
-verbose_sim: False
-verbose_prediction_summary: False
+verbose_sim: True
+verbose_prediction_summary: True
 
 # Params for STDP check (prediction vs simulation)
 csv_file_pre: 'spikes_pre_neurons.csv'
@@ -11,17 +11,17 @@ csv_file_post: 'spikes_post_neurons.csv'
 # Simulation parameters
 T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
-Total_number_described_synapses_for_sim: 4 # total number of synapses described in this file
+Total_number_described_synapses_for_sim: 13 # total number of synapses described in this file
 # Optional start and end synapse ID to focus sim and analysis on a subset
-start_synapse: 2
-end_synapse: 3
+start_synapse: 9
+end_synapse: 10
 
 # Initial weights for each STDP connection
-W_init: [39.5, 39.5, 39.5, 39.5]
+W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5]
 
 # Synaptic delays for the STDP synapse
-dendritic_delay_ms: [0.1, 0.1, 0.1, 0.1]
-axonal_delay_ms: [5.0, 5.0, 5.0, 5.0]
+dendritic_delay_ms: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+axonal_delay_ms: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
 
 # Parameters for both stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 stdp_params:
@@ -37,13 +37,33 @@ spike_train_pre_ms: [
     [50,150],
     [50,150],
     [50,150],
-    [50,150]]
+    [50,150],
+    [50],
+    [50],
+    [50],
+    [50,150],    
+    [10,12,14,100.4],
+    [10,12,14,100.4],
+    [12,14,100.4],
+    [14,100.4],
+    [12,100.4],
+    ]
                 
 spike_train_post_ms: [
     [25,60],
     [30,35,60],
     [30,60,70],
-    [30,40,60,70]]
+    [30,40,60,70],
+    [30],
+    [30,35],
+    [30,35,43],
+    [30,35,40,60],
+    [19],
+    [19,24],
+    [19],
+    [19],
+    [19],
+    ]
 
 # Large static weights to ensure forced spiking
 forced_in_weight:  6000.0  # from spike_generator_in -> pre_neuron
