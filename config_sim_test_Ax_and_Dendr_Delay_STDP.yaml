@@ -1,15 +1,15 @@
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 axonal_support: True
 
-verbose_sim: True
-verbose_prediction_summary: True
+verbose_sim: False
+verbose_prediction_summary: False
 
-sim_plot_save: False
+sim_plot_save: True
 prediction_plot_save: True
 
 plot_display: False
 
-# Params for STDP check (prediction vs simulation)
+# Files storing spikes of pre/post synaptic neurons
 csv_file_pre: 'spikes_pre_neurons.csv'
 csv_file_post: 'spikes_post_neurons.csv'
 
@@ -18,8 +18,8 @@ T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
 Total_number_described_synapses_for_sim: 13 # total number of synapses described in this file
 # Optional start and end synapse ID to focus sim and analysis on a subset
-start_synapse: 9
-end_synapse: 10
+#start_synapse: 11
+#end_synapse: 13
 
 # Initial weights for each STDP connection
 W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5]
@@ -80,6 +80,4 @@ plot_marker_ms: 50       #time interval of markers in plots
 plot_major_ticks_ms: 10
 
 plot_mm: False
-mm_pre: [0,1,2,3]
-mm_post: [0,1,2,3]
 

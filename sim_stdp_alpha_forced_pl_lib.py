@@ -19,11 +19,16 @@ def sim_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     with open(config_file, 'r') as f:
         cfg = yaml.safe_load(f)
-    
+
+    axonal_support        = cfg["axonal_support"]
+        
     verbose               = cfg["verbose_sim"]
     sim_plot_save         = cfg["sim_plot_save"]
     plot_display          = cfg["plot_display"]
 
+    csv_file_pre          = cfg["csv_file_pre"]
+    csv_file_post         = cfg["csv_file_post"]
+    
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
     N                     = cfg["Total_number_described_synapses_for_sim"]
@@ -52,8 +57,6 @@ def sim_stdp_alpha_forced_pl(config_file):
     plot_major_ticks_ms   = cfg["plot_major_ticks_ms"]
 
     plot_mm               = cfg["plot_mm"]
-    mm_pre                = cfg["mm_pre"]
-    mm_post               = cfg["mm_post"]
 
     # Validate range
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
@@ -188,6 +191,10 @@ def sim_stdp_alpha_forced_pl(config_file):
     # Create and connect multimeters for PRE- and POST-neurons
     #--------------------------------------------------------------------------
     if verbose: print("Create and connect multimeters  ------------------")
+
+    mm_pre = list(range(start_syn-1, end_syn))
+    mm_post = list(range(start_syn-1, end_syn))
+
     n_mm_pre = len(mm_pre)
     n_mm_post = len(mm_post)
     
@@ -231,16 +238,16 @@ def sim_stdp_alpha_forced_pl(config_file):
         "senders": events_pre["senders"],
         "times":   events_pre["times"]
     })
-    df_pre.to_csv("spikes_pre_neurons.csv", index=False)
-    print("Saved spikes of pre_neurons to 'spikes_pre_neurons.csv'")
+    df_pre.to_csv(csv_file_pre, index=False)
+    print("Saved spikes of pre_neurons to", csv_file_pre)
 
     events_post = spike_rec_post.get("events")
     df_post = pd.DataFrame({
         "senders": events_post["senders"],
         "times":   events_post["times"]
     })
-    df_post.to_csv("spikes_post_neurons.csv", index=False)
-    print("Saved spikes of post_neurons to 'spikes_post_neurons.csv'")
+    df_post.to_csv(csv_file_post, index=False)
+    print("Saved spikes of post_neurons to", csv_file_post)
 
     #--------------------------------------------------------------------------
     # Retrieve multimeter data
@@ -311,27 +318,27 @@ def sim_stdp_alpha_forced_pl(config_file):
     if plot_mm:
         if n_mm_pre > 0:
             plt.figure('Membrane Voltage PRE (iaf_psc_alpha)')
-            for i in range(n_mm_pre):
-                plt.subplot(n_mm_pre,1,i+1)
-                plt.plot(res_pre[i]['times'], res_pre[i]['V_m'], label='neu '+str(i))
+            for i in reversed(range(n_mm_pre)):
+                plt.subplot(n_mm_pre,1,n_mm_pre-i)
+                plt.plot(res_pre[i]['times'], res_pre[i]['V_m'], label='neu '+str(start_syn+i))
                 plt.legend()
                 plt.xlim(0, T_sim_ms)
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
-                if i==0:
+                if i==n_mm_pre-1:
                     plt.title('PRE-neurons')
             plt.xlabel('Time [ms]')
     
         if n_mm_post > 0:
             plt.figure('Membrane Voltage POST (iaf_psc_alpha)')
-            for i in range(n_mm_post):
-                plt.subplot(n_mm_post,1,i+1)
-                plt.plot(res_post[i]['times'], res_post[i]['V_m'], label='neu '+str(i))
+            for i in reversed(range(n_mm_post)):
+                plt.subplot(n_mm_post,1,n_mm_post-i)
+                plt.plot(res_post[i]['times'], res_post[i]['V_m'], label='neu '+str(start_syn+i))
                 plt.legend()
                 plt.xlim(0, T_sim_ms)
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
-                if i==0:
+                if i==n_mm_post-1:
                     plt.title('POST-neurons')
             plt.xlabel('Time [ms]')
 
