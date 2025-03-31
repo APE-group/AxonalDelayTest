@@ -464,8 +464,8 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
     w_0          = config["w_0"]
 
     init_weights_list     = config.get("W_init", None)
-    axonal_delays_list    = config.get("axonal_delays_ms", None)
-    dendritic_delays_list = config.get("dendritic_delays_ms", None)
+    axonal_delays_list    = config.get("axonal_delay_ms", None)
+    dendritic_delays_list = config.get("dendritic_delay_ms", None)
     if init_weights_list is None or len(init_weights_list) != N:
         raise ValueError("W_init must be list of length N.")
 
