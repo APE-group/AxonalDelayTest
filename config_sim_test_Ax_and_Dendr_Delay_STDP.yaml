@@ -2,7 +2,7 @@
 axonal_support: True
 
 verbose_sim: False
-verbose_prediction_summary: False
+verbose_prediction_summary: True
 
 sim_plot_save: True
 prediction_plot_save: True
@@ -16,17 +16,17 @@ csv_file_post: 'spikes_post_neurons.csv'
 # Simulation parameters
 T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
-Total_number_described_synapses_for_sim: 13 # total number of synapses described in this file
+Total_number_described_synapses_for_sim: 16 # total number of synapses described in this file
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_synapse: 11
 #end_synapse: 13
 
 # Initial weights for each STDP connection
-W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5]
+W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 20.8, 69.0]
 
 # Synaptic delays for the STDP synapse
-dendritic_delay_ms: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-axonal_delay_ms: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+dendritic_delay_ms: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1.0, 1.0, 1.0]
+axonal_delay_ms: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.5]
 
 # Parameters for both stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 stdp_params:
@@ -52,6 +52,9 @@ spike_train_pre_ms: [
     [12,14,100.4],
     [14,100.4],
     [12,100.4],
+    [10,100.4],
+    [10,100.4],
+    [10,100.4],
     ]
                 
 spike_train_post_ms: [
@@ -68,6 +71,9 @@ spike_train_post_ms: [
     [19],
     [19],
     [19],
+    [10],
+    [15],
+    [15],
     ]
 
 # Large static weights to ensure forced spiking
