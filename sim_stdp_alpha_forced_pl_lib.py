@@ -24,7 +24,7 @@ import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def sim_stdp_alpha_forced_pl(config_file):
+def sim_stdp_alpha_forced_pl(cfg):
     """
     For each synapse n:
       - PRE-neuron: iaf_psc_alpha(high threshold), forced by spike_generator_in.
@@ -33,16 +33,10 @@ def sim_stdp_alpha_forced_pl(config_file):
       - Different spike trains are used for pre- and post-neurons.
       - We record spikes (pre & post), the evolving weight and the membrane potentials.
     """
-
-    #--------------------------------------------------------------------------
-    # Read YAML config
-    #--------------------------------------------------------------------------
-    with open(config_file, 'r') as f:
-        cfg = yaml.safe_load(f)
-
+    
     axonal_support        = cfg["axonal_support"]
         
-    verbose               = cfg["verbose_sim"]
+    verbose_sim           = cfg["verbose_sim"]
     sim_plot_save         = cfg["sim_plot_save"]
     plot_display          = cfg["plot_display"]
 
@@ -51,7 +45,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
-    N                     = cfg["Total_number_described_synapses_for_sim"]
+    N                     = cfg["N"]
 
     # If user doesn't specify, default to [1..N]
     start_syn             = cfg.get("start_synapse", 1)
@@ -61,11 +55,15 @@ def sim_stdp_alpha_forced_pl(config_file):
     spike_train_post_ms   = cfg["spike_train_post_ms"]  
 
     axonal_support        = cfg["axonal_support"]
+    
+    #DEBUG REMOVE PSP
+    print("in sim_stdp_..., axonal_support =", axonal_support)
     if axonal_support:
         dendritic_delay   = cfg["dendritic_delay_ms"]
         axonal_delay      = cfg["axonal_delay_ms"]
     else:
         delay             = cfg["dendritic_delay_ms"]
+    
     W_init                = cfg["W_init"]
 
     stdp_params           = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
@@ -103,7 +101,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     # Build the PRE-neuron (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
     #--------------------------------------------------------------------------
-    if verbose: print(" Build the PRE-neuron ------------------")
+    if verbose_sim: print(" Build the PRE-neuron ------------------")
     pre_neurons = nest.Create("iaf_psc_alpha", N)
     nest.SetStatus(pre_neurons, {
         "V_th": -10.0,   # artificially high
@@ -115,7 +113,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     # Build the POST-neuron (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
     #--------------------------------------------------------------------------
-    if verbose: print(" Build the POST-neuron ------------------")
+    if verbose_sim: print(" Build the POST-neuron ------------------")
     post_neurons = nest.Create("iaf_psc_alpha", N)
     nest.SetStatus(post_neurons, {
         "V_th": -10.0,   # artificially high
@@ -126,7 +124,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     # Create and connect spike generators to PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    if verbose: print(" Create and connect spike generators ------------------")
+    if verbose_sim: print(" Create and connect spike generators ------------------")
 
     spike_generators_in = []
     
@@ -168,7 +166,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     # Connect PRE-neuron -> POST-neuron with the custom "my_stdp_pl_hom" synapse
     #--------------------------------------------------------------------------
-    if verbose: print("Connect pre_neuron -> post_neuron ------------------")
+    if verbose_sim: print("Connect pre_neuron -> post_neuron ------------------")
     connection_handles = []
     for i in range(N):
         if axonal_support:
@@ -200,7 +198,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     # Create and connect spike recorders for PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    if verbose: print("Create and connect spike recorders  ------------------")
+    if verbose_sim: print("Create and connect spike recorders  ------------------")
     spike_rec_pre  = nest.Create("spike_recorder")
     spike_rec_post = nest.Create("spike_recorder")
 
@@ -210,7 +208,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     # Create and connect multimeters for PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    if verbose: print("Create and connect multimeters  ------------------")
+    if verbose_sim: print("Create and connect multimeters  ------------------")
 
     mm_pre = list(range(start_syn-1, end_syn))
     mm_post = list(range(start_syn-1, end_syn))
@@ -228,7 +226,7 @@ def sim_stdp_alpha_forced_pl(config_file):
     #--------------------------------------------------------------------------
     # Simulation in steps, log weight changes
     #--------------------------------------------------------------------------
-    if verbose: print("Simulate in steps  ------------------")
+    if verbose_sim: print("Simulate in steps  ------------------")
     current_time = 0.0
     weight_records = []
 

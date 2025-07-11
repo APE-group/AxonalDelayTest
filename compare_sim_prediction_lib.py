@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import matplotlib as plt
+import pandas as pd
 
 def compare_csv_files(csv_file_1, csv_file_2, threshold=1e-8):
     """

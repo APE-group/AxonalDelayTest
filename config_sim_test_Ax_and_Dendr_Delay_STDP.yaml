@@ -19,7 +19,7 @@
 #
 
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
-axonal_support: True
+axonal_support: False
 
 verbose_sim: False
 verbose_prediction_summary: True
@@ -40,6 +40,8 @@ Total_number_described_synapses_for_sim: 16 # total number of synapses described
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_synapse: 11
 #end_synapse: 13
+
+output_sim_csv: "sim_summary.csv"
 
 # Initial weights for each STDP connection
 W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 20.8, 69.0]

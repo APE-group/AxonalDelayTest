@@ -447,7 +447,7 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
 # Main
 ###############################################################################
 
-def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
+def predict_stdp_alpha_forced_pl(config):
     """
     1) Read config,
     2) Load spikes,
@@ -458,30 +458,23 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
     7) Return minimal "analysis_summary" for the user => {syn_i: {"syn_ID", "start_syn_value", "final_syn_value"}} 
     No plt.show() calls here.
     """
-    import yaml
-    with open(config_check_stdp_filename, "r") as f:
-        config = yaml.safe_load(f)
-
-    prediction_plot_save         = config["prediction_plot_save"]
-
-    N             = config["Total_number_described_synapses_for_sim"]
-    csv_file_pre  = config["csv_file_pre"]
-    csv_file_post = config["csv_file_post"]
-    start_syn     = config.get("start_synapse", 1)
-    end_syn       = config.get("end_synapse", N)
-    verbose_pred  = config.get("verbose_prediction_summary", True)
+    verbose_pred = config["verbose_pred"]
+    tau_plus_ms  = config["stdp_params"]["tau_plus"]
+    lambda_pmt   = config["stdp_params"]["lambda"]
+    alpha        = config["stdp_params"]["alpha"]
+    mu           = config["stdp_params"]["mu"]
+    w_0          = config["w_0"]
+    start_syn    = config["start_syn"]
+    end_syn      = config["end_syn"]
+    N            = config["N"]
+    csv_file_pre = config["csv_file_pre"]
+    csv_file_post= config["csv_file_post"]
+    prediction_plot_save = config["prediction_plot_save"]
 
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
         raise ValueError("start_synapse and end_synapse must be integers.")
     if start_syn < 1 or end_syn > N or start_syn > end_syn:
         raise ValueError(f"Invalid syn range: {start_syn}..{end_syn}, must be in [1..{N}]")
-
-    stdp_params  = config["stdp_params"]
-    tau_plus_ms  = stdp_params["tau_plus"]
-    lambda_pmt   = stdp_params["lambda"]
-    alpha        = stdp_params["alpha"]
-    mu           = stdp_params["mu"]
-    w_0          = config["w_0"]
 
     init_weights_list     = config.get("W_init", None)
     axonal_delays_list    = config.get("axonal_delay_ms", None)
