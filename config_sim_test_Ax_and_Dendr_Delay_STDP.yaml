@@ -36,7 +36,7 @@ csv_file_post: 'spikes_post_neurons.csv'
 # Simulation parameters
 T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
-Total_number_described_synapses_for_sim: 16 # total number of synapses described in this file
+Total_number_described_synapses_for_sim: 0 # total number of synapses described in this file
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_synapse: 11
 #end_synapse: 13
@@ -44,16 +44,16 @@ Total_number_described_synapses_for_sim: 16 # total number of synapses described
 output_sim_csv: "sim_summary.csv"
 
 # Initial weights for each STDP connection
-W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 20.8, 69.0]
+W_init: []
 W_min: 0. #used when generating additional random events
 W_max: 80. #used when generating additional random events
 
 # Synaptic delays for the STDP synapse
-dendritic_delay_ms: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1.0, 1.0, 1.0]
+dendritic_delay_ms: []
 min_dendritic_delay_ms: 0.1 #used when generating additional random events
 max_dendritic_delay_ms: 0.4 #used when generating additional random events
 
-axonal_delay_ms: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.5]
+axonal_delay_ms: []
 min_axonal_delay_ms: 0.0 #used when generating additional random events
 max_axonal_delay_ms: 10.0 #used when generating additional random events
 
@@ -67,43 +67,9 @@ stdp_params:
 w_0: 1.
 
 # A single time-interval list for both pre and post spike trains (in ms)
-spike_train_pre_ms: [
-    [50,150],
-    [50,150],
-    [50,150],
-    [50,150],
-    [50],
-    [50],
-    [50],
-    [50,150],    
-    [10,12,14,100.4],
-    [10,12,14,100.4],
-    [12,14,100.4],
-    [14,100.4],
-    [12,100.4],
-    [10,100.4],
-    [10,100.4],
-    [10,100.4],
-    ]
+spike_train_pre_ms: []
                 
-spike_train_post_ms: [
-    [25,60],
-    [30,35,60],
-    [30,60,70],
-    [30,40,60,70],
-    [30],
-    [30,35],
-    [30,35,43],
-    [30,35,40,60],
-    [19],
-    [19,24],
-    [19],
-    [19],
-    [19],
-    [10],
-    [15],
-    [15],
-    ]
+spike_train_post_ms: []
 
 # Large static weights to ensure forced spiking
 forced_in_weight:  6000.0  # from spike_generator_in -> pre_neuron
