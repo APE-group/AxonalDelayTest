@@ -51,8 +51,16 @@ def read_config(name_without_path):
         
         config_pms["axonal_support"] = cfg["axonal_support"]
         config_pms["dendritic_delay_ms"]   = cfg["dendritic_delay_ms"]
+        config_pms["min_dendritic_delay_ms"]   = cfg["min_dendritic_delay_ms"]
+         config_pms["max_dendritic_delay_ms"]   = cfg["max_dendritic_delay_ms"]  
+        
         config_pms["axonal_delay_ms"]     = cfg["axonal_delay_ms"]
+        config_pms["min_axonal_delay_ms"]     = cfg["min_axonal_delay_ms"]
+        config_pms["max_axonal_delay_ms"]     = cfg["max_axonal_delay_ms"]
+        
         config_pms["W_init"]                = cfg["W_init"]
+        config_pms["W_min"]                = cfg["W_min"]
+        config_pms["W_max"]                = cfg["W_max"]
         
         config_pms["stdp_params"]           = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
                                                         "alpha": 0.11, "mu": 0.4})
