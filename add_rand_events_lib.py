@@ -25,6 +25,7 @@
 
 import numpy as np
 import random
+import yaml
 
 def add_rand_events(config_pms, additional_syn_N = 3, max_event_N = 5):
     rand_W_init = [random.uniform(config_pms["W_min"], config_pms["W_max"]) for _ in range(additional_syn_N)]
@@ -58,5 +59,9 @@ def add_rand_events(config_pms, additional_syn_N = 3, max_event_N = 5):
     config_pms["spike_train_post_ms"] += rounded_rand_spike_train_post_ms
 
     config_pms["N"] += additional_syn_N
+    config_pms["end_syn"] = config_pms["N"]
+
+    with open('current_config.yaml', 'w') as file:
+        yaml.dump(config_pms, file)
     
     return config_pms

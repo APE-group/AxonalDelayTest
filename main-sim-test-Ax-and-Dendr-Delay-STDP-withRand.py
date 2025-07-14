@@ -24,10 +24,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import pandas as pd
-#import numpy as np
-#import random
 from read_config_lib import read_config
 from get_script_dir import *
 from sim_stdp_alpha_forced_pl_lib import sim_stdp_alpha_forced_pl
