@@ -45,10 +45,17 @@ output_sim_csv: "sim_summary.csv"
 
 # Initial weights for each STDP connection
 W_init: [39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 39.5, 20.8, 69.0]
+W_min: 0. #used when generating additional random events
+W_max: 80. #used when generating additional random events
 
 # Synaptic delays for the STDP synapse
 dendritic_delay_ms: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1.0, 1.0, 1.0]
+min_dendritic_delay_ms: 0.1 #used when generating additional random events
+max_dendritic_delay_ms: 0.4 #used when generating additional random events
+
 axonal_delay_ms: [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.5]
+min_axonal_delay_ms: 0.0 #used when generating additional random events
+max_axonal_delay_ms: 10.0 #used when generating additional random events
 
 # Parameters for both stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 stdp_params:
