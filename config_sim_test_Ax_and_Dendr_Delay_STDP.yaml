@@ -19,7 +19,7 @@
 #
 
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
-axonal_support: False
+axonal_support: True
 
 verbose_sim: False
 verbose_prediction_summary: True

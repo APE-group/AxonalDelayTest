@@ -4,7 +4,7 @@
 # In[ ]:
 
 
-#  main-sim-test-Ax-and-Dendr-Delay-STDP.ipynb
+#  main-sim-test-Ax-and-Dendr-Delay-STDP.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
 #
@@ -26,14 +26,20 @@
 import os
 import matplotlib as plt
 import pandas as pd
+#import numpy as np
+#import random
 from read_config_lib import read_config
 from get_script_dir import *
 from sim_stdp_alpha_forced_pl_lib import sim_stdp_alpha_forced_pl
 from predict_stdp_alpha_forced_pl_lib import predict_stdp_alpha_forced_pl
 from compare_sim_prediction_lib import compare_csv_files
-        
+from add_rand_events_lib import add_rand_events
+    
+    
 if __name__ == "__main__":
-    config_pms = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")     
+    config_pms = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
+    config_pms = add_rand_events(config_pms, additional_syn_N = 1, max_event_N = 5)
+    
     # sim 1)
     df_w, sim_summary, plot_display = sim_stdp_alpha_forced_pl(config_pms)
     #print("df_w",df_w)

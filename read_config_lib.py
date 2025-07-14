@@ -52,7 +52,7 @@ def read_config(name_without_path):
         config_pms["axonal_support"] = cfg["axonal_support"]
         config_pms["dendritic_delay_ms"]   = cfg["dendritic_delay_ms"]
         config_pms["min_dendritic_delay_ms"]   = cfg["min_dendritic_delay_ms"]
-         config_pms["max_dendritic_delay_ms"]   = cfg["max_dendritic_delay_ms"]  
+        config_pms["max_dendritic_delay_ms"]   = cfg["max_dendritic_delay_ms"]  
         
         config_pms["axonal_delay_ms"]     = cfg["axonal_delay_ms"]
         config_pms["min_axonal_delay_ms"]     = cfg["min_axonal_delay_ms"]
