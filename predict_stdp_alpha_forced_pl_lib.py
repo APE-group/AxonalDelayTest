@@ -465,7 +465,7 @@ def predict_stdp_alpha_forced_pl(config):
     mu           = config["stdp_params"]["mu"]
     w_0          = config["w_0"]
     start_syn    = config["start_syn"]
-    end_syn      = config["end_syn"]
+    end_syn      = config.get("end_synapse", config["N"])
     N            = config["N"]
     csv_file_pre = config["csv_file_pre"]
     csv_file_post= config["csv_file_post"]
