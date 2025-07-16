@@ -60,9 +60,8 @@ def sim_stdp_alpha_forced_pl(cfg):
 
     W_init              = cfg["W_init"]
 
-    stdp_params         = cfg.get("stdp_params",
-                                  {"tau_plus": 20.0, "lambda": 0.9,
-                                   "alpha": 0.11,  "mu": 0.4})
+    stdp_params         = cfg["stdp_params"]
+                                      
     forced_in_weight    = cfg["forced_in_weight"]
     forced_out_weight   = cfg["forced_out_weight"]
 
