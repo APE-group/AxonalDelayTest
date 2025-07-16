@@ -43,8 +43,8 @@ csv_file_post: 'spikes_post_neurons.csv'
 T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
 # Optional start and end synapse ID to focus sim and analysis on a subset
-#start_synapse: 4
-#end_synapse: 4
+#start_syn: 4
+#end_syn: 4
 
 output_sim_csv: "sim_summary.csv"
 

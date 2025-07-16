@@ -70,7 +70,6 @@ if __name__ == "__main__":
     output_pred_csv = config_pms["output_pred_csv"]
     df_summary.to_csv(output_pred_csv, index=False)
     print(f"Prediction summary saved to {output_pred_csv}.")
-
     
     # 4) Compare the two CSVs
     match_ok = compare_csv_files(output_sim_csv, output_pred_csv, threshold=1e-8)

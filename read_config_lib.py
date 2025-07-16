@@ -45,8 +45,8 @@ def read_config(name_without_path):
         cfg_pms["save_int_ms"] = cfg["save_int_ms"]
         
         # If user doesn't specify, default to [1..N]
-        cfg_pms["start_syn"] = cfg.get("start_synapse", 1)
-        cfg_pms["end_syn"] = cfg.get("end_synapse", cfg_pms["N"])
+        cfg_pms["start_syn"] = cfg.get("start_syn", 0)
+        cfg_pms["end_syn"] = cfg.get("end_syn", cfg_pms["N"]-1)
         
         cfg_pms["spike_train_pre_ms"] = cfg["spike_train_pre_ms"]  
         cfg_pms["spike_train_post_ms"] = cfg["spike_train_post_ms"]  
@@ -80,8 +80,6 @@ def read_config(name_without_path):
 
         cfg_pms["csv_file_pre"]  = cfg["csv_file_pre"]
         cfg_pms["csv_file_post"] = cfg["csv_file_post"]
-        cfg_pms["start_syn"]     = cfg.get("start_synapse", 1)
-        cfg_pms["end_syn"]       = cfg.get("end_synapse", cfg["Total_number_described_synapses_for_sim"])
         cfg_pms["verbose_pred"]  = cfg.get("verbose_prediction_summary", True)
 
         cfg_pms["stdp_params"]  = cfg["stdp_params"]

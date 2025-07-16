@@ -1,373 +1,235 @@
-#  sim_stdp_alpha_forced_pl_lib.py
-#  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
-#  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
+#  sim_stdp_alpha_forced_pl_lib_zero_based.py
+#  Version: 2025‑07‑16  —  IDs in all saved artefacts run 0 … N‑1
+#  (everything else identical to the previous 1‑based version)
 #
-#  SPDX-License-Identifier: GPL-3.0-only
+#  Copyright © 2025   Pier Stanislao Paolucci <pier.paolucci@roma1.infn.it>
+#  Copyright © 2025   Elena Pastorelli       <elena.pastorelli@roma1.infn.it>
+#  SPDX‑License‑Identifier: GPL‑3.0‑or‑later
 #
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
+# ----------------------------------------------------------------------
 
 import nest
 import numpy as np
-import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# ----------------------------------------------------------------------
+# Top‑level API
+# ----------------------------------------------------------------------
 def sim_stdp_alpha_forced_pl(cfg):
     """
-    For each synapse n:
-      - PRE-neuron: iaf_psc_alpha(high threshold), forced by spike_generator_in.
-      - POST-neuron: iaf_psc_alpha (high threshold), forced by spike_generator_out.
-      - STDP synapse = stdp_pl_synapse_hom from pre -> post, with user-defined params.
-      - Different spike trains are used for pre- and post-neurons.
-      - We record spikes (pre & post), the evolving weight and the membrane potentials.
+    Run the same forced‑spike STDP experiment as before **but save every
+    external identifier (spike senders, diagnostic dictionaries, plot labels,
+    etc.) with 0‑based numbering**:
+
+        • PRE neuron IDs      0 … N‑1
+        • POST neuron IDs     N … 2N‑1
+        • Synapse indices     0 … N‑1
+
+    Internally NEST still uses its global IDs starting at 1; we subtract 1
+    only when writing out.
     """
-    
-    axonal_support        = cfg["axonal_support"]
-        
-    verbose_sim           = cfg["verbose_sim"]
-    sim_plot_save         = cfg["sim_plot_save"]
-    plot_display          = cfg["plot_display"]
 
-    csv_file_pre          = cfg["csv_file_pre"]
-    csv_file_post         = cfg["csv_file_post"]
-    
-    T_sim_ms              = cfg["T_sim_ms"]
-    save_int_ms           = cfg["save_int_ms"]
-    N                     = cfg["N"]
+    # ------------------------------------------------------------------
+    # --- 1.  Read config ------------------------------------------------
+    # ------------------------------------------------------------------
+    verbose_sim   = cfg["verbose_sim"]
+    sim_plot_save = cfg["sim_plot_save"]
+    plot_display  = cfg["plot_display"]
 
-    # If user doesn't specify, default to [1..N]
-    start_syn             = cfg.get("start_synapse", 1)
-    end_syn               = cfg.get("end_synapse", N)
-    
-    spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
-    spike_train_post_ms   = cfg["spike_train_post_ms"]  
+    csv_file_pre  = cfg["csv_file_pre"]
+    csv_file_post = cfg["csv_file_post"]
 
-    axonal_support        = cfg["axonal_support"]
-    
-    #DEBUG REMOVE PSP
-    print("in sim_stdp_..., axonal_support =", axonal_support)
+    T_sim_ms      = cfg["T_sim_ms"]
+    save_int_ms   = cfg["save_int_ms"]
+    N             = cfg["N"]
+
+    # default selection expressed *in zero‑based indices*
+    start_syn     = cfg["start_syn"]
+    end_syn       = cfg["end_syn"]
+
+    spike_train_pre_ms  = cfg["spike_train_pre_ms"]
+    spike_train_post_ms = cfg["spike_train_post_ms"]
+
+    axonal_support      = cfg["axonal_support"]
     if axonal_support:
-        dendritic_delay   = cfg["dendritic_delay_ms"]
-        axonal_delay      = cfg["axonal_delay_ms"]
+        dendritic_delay = cfg["dendritic_delay_ms"]
+        axonal_delay    = cfg["axonal_delay_ms"]
     else:
-        delay             = cfg["dendritic_delay_ms"]
-    
-    W_init                = cfg["W_init"]
+        delay           = cfg["dendritic_delay_ms"]
 
-    stdp_params           = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
-                                                    "alpha": 0.11, "mu": 0.4})
-    forced_in_weight      = cfg.get("forced_in_weight",  1000.0)
-    forced_out_weight     = cfg.get("forced_out_weight", 1000.0)
+    W_init              = cfg["W_init"]
 
-    plot_marker_ms        = cfg["plot_marker_ms"]
-    plot_major_ticks_ms   = cfg["plot_major_ticks_ms"]
+    stdp_params         = cfg.get("stdp_params",
+                                  {"tau_plus": 20.0, "lambda": 0.9,
+                                   "alpha": 0.11,  "mu": 0.4})
+    forced_in_weight    = cfg["forced_in_weight"]
+    forced_out_weight   = cfg["forced_out_weight"]
 
-    plot_mm               = cfg["plot_mm"]
+    plot_marker_ms      = cfg["plot_marker_ms"]
+    plot_major_ticks_ms = cfg["plot_major_ticks_ms"]
+    plot_mm             = cfg["plot_mm"]
 
-    # Validate range
-    if not isinstance(start_syn, int) or not isinstance(end_syn, int):
-        raise ValueError("start_synapse and end_synapse must be integers.")
-    if start_syn < 1 or end_syn > N or start_syn > end_syn:
-        raise ValueError(f"Invalid synapse range: start={start_syn}, end={end_syn}, must be in [1..{N}] and start<=end.")
-    
-    #--------------------------------------------------------------------------
-    # Reset and configure NEST kernel
-    #--------------------------------------------------------------------------
+    # validate selection
+    if start_syn < 0 or end_syn >= N or start_syn > end_syn:
+        raise ValueError(f"Invalid synapse range: {start_syn=} {end_syn=} for N={N}")
+
+    # ------------------------------------------------------------------
+    # --- 2.  NEST set‑up ----------------------------------------------
+    # ------------------------------------------------------------------
     nest.ResetKernel()
     nest.SetKernelStatus({"resolution": 0.1})
-    nest.set_verbosity('M_ERROR')
+    nest.set_verbosity("M_ERROR")
 
-    #--------------------------------------------------------------------------
-    # Create or set stdp_pl_synapse_hom in NEST 3.7
-    #--------------------------------------------------------------------------
     if axonal_support:
-        nest.CopyModel("stdp_pl_synapse_hom_ax_delay", "my_stdp_pl_hom", stdp_params)
+        nest.CopyModel("stdp_pl_synapse_hom_ax_delay", "my_stdp_pl_hom",
+                       stdp_params)
     else:
-        nest.CopyModel("stdp_pl_synapse_hom", "my_stdp_pl_hom", stdp_params)
+        nest.CopyModel("stdp_pl_synapse_hom", "my_stdp_pl_hom",
+                       stdp_params)
 
-    #--------------------------------------------------------------------------
-    # Build the PRE-neuron (iaf_psc_alpha) with high threshold
-    #    so it won't spike unless forced by the output generator
-    #--------------------------------------------------------------------------
-    if verbose_sim: print(" Build the PRE-neuron ------------------")
-    pre_neurons = nest.Create("iaf_psc_alpha", N)
-    nest.SetStatus(pre_neurons, {
-        "V_th": -10.0,   # artificially high
-        "E_L": -70.0,
-        "V_reset": -70.0
-    })
-
-    #--------------------------------------------------------------------------
-    # Build the POST-neuron (iaf_psc_alpha) with high threshold
-    #    so it won't spike unless forced by the output generator
-    #--------------------------------------------------------------------------
-    if verbose_sim: print(" Build the POST-neuron ------------------")
+    pre_neurons  = nest.Create("iaf_psc_alpha", N)
     post_neurons = nest.Create("iaf_psc_alpha", N)
-    nest.SetStatus(post_neurons, {
-        "V_th": -10.0,   # artificially high
-        "E_L": -70.0,
-        "V_reset": -70.0
-    })
-    
-    #--------------------------------------------------------------------------
-    # Create and connect spike generators to PRE- and POST-neurons
-    #--------------------------------------------------------------------------
-    if verbose_sim: print(" Create and connect spike generators ------------------")
 
-    spike_generators_in = []
-    
-    #loop over N synapses
-    for i in range(N):
+    nest.SetStatus(pre_neurons + post_neurons,
+                   {"V_th": -10.0, "E_L": -70.0, "V_reset": -70.0})
 
-        sg_in = nest.Create("spike_generator", params={
-            "spike_times": spike_train_pre_ms[i]
-        })
-        spike_generators_in.append(sg_in)
-
-        # Connect input generator -> pre_neuron[i] with large weight
-        nest.Connect(
-            sg_in,
-            pre_neurons[i],
-            {"rule": "one_to_one"},
-            {"synapse_model": "static_synapse", "weight": forced_in_weight, "delay": 1.0}
-        )
-
+    # -- spike generators ------------------------------------------------
+    spike_generators_in  = []
     spike_generators_out = []
 
-    #loop over N synapses
     for i in range(N):
+        sg_in  = nest.Create("spike_generator",
+                             params={"spike_times": spike_train_pre_ms[i]})
+        sg_out = nest.Create("spike_generator",
+                             params={"spike_times": spike_train_post_ms[i]})
 
-        sg_out = nest.Create("spike_generator", params={
-            "spike_times": spike_train_post_ms[i]
-        })
+        spike_generators_in.append(sg_in)
         spike_generators_out.append(sg_out)
 
+        nest.Connect(sg_in,  pre_neurons[i],
+                     "one_to_one",
+                     {"synapse_model": "static_synapse",
+                      "weight": forced_in_weight, "delay": 1.0})
 
-        # Connect output generator -> post_neuron[i] with large weight
-        nest.Connect(
-            sg_out,
-            post_neurons[i],
-            {"rule": "one_to_one"},
-            {"synapse_model": "static_synapse", "weight": forced_out_weight, "delay": 1.0}
-        )
+        nest.Connect(sg_out, post_neurons[i],
+                     "one_to_one",
+                     {"synapse_model": "static_synapse",
+                      "weight": forced_out_weight, "delay": 1.0})
 
-    #--------------------------------------------------------------------------
-    # Connect PRE-neuron -> POST-neuron with the custom "my_stdp_pl_hom" synapse
-    #--------------------------------------------------------------------------
-    if verbose_sim: print("Connect pre_neuron -> post_neuron ------------------")
+    # -- plastic synapses -----------------------------------------------
     connection_handles = []
     for i in range(N):
+        syn_kwargs = {"synapse_model": "my_stdp_pl_hom",
+                      "weight": W_init[i]}
         if axonal_support:
-            nest.Connect(
-                pre_neurons[i],
-                post_neurons[i],
-                {"rule": "one_to_one"},
-                {
-                    "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
-                    "weight": W_init[i],
-                    "dendritic_delay": dendritic_delay[i],
-                    "axonal_delay": axonal_delay[i]
-                }
-            )
+            syn_kwargs.update({"dendritic_delay": dendritic_delay[i],
+                               "axonal_delay":    axonal_delay[i]})
         else:
-            nest.Connect(
-                pre_neurons[i],
-                post_neurons[i],
-                {"rule": "one_to_one"},
-                {
-                    "synapse_model": "my_stdp_pl_hom",  # The custom copy with user parameters
-                    "weight": W_init[i],
-                    "delay": delay[i]
-                }
-            )            
-        # Grab the connection handle for weight logging
-        conn_obj = nest.GetConnections(pre_neurons[i], post_neurons[i])[0]
-        connection_handles.append(conn_obj)
-    #--------------------------------------------------------------------------
-    # Create and connect spike recorders for PRE- and POST-neurons
-    #--------------------------------------------------------------------------
-    if verbose_sim: print("Create and connect spike recorders  ------------------")
+            syn_kwargs.update({"delay": delay[i]})
+
+        nest.Connect(pre_neurons[i], post_neurons[i], "one_to_one", syn_kwargs)
+        connection_handles.append(nest.GetConnections(pre_neurons[i],
+                                                      post_neurons[i])[0])
+
+    # -- spike recorders & multimeters ----------------------------------
     spike_rec_pre  = nest.Create("spike_recorder")
     spike_rec_post = nest.Create("spike_recorder")
+    nest.Connect(pre_neurons,  spike_rec_pre,  "all_to_all")
+    nest.Connect(post_neurons, spike_rec_post, "all_to_all")
 
-    nest.Connect(pre_neurons,  spike_rec_pre,  {"rule": "all_to_all"})
-    nest.Connect(post_neurons, spike_rec_post, {"rule": "all_to_all"})
+    mm_indices = list(range(start_syn, end_syn+1))
+    mm_pre = nest.Create("multimeter", len(mm_indices),
+                         {"record_from": ["V_m"], "interval": .1})
+    mm_post = nest.Create("multimeter", len(mm_indices),
+                          {"record_from": ["V_m"], "interval": .1})
+    for k, idx in enumerate(mm_indices):
+        nest.Connect(mm_pre[k],  pre_neurons[idx])
+        nest.Connect(mm_post[k], post_neurons[idx])
 
-    #--------------------------------------------------------------------------
-    # Create and connect multimeters for PRE- and POST-neurons
-    #--------------------------------------------------------------------------
-    if verbose_sim: print("Create and connect multimeters  ------------------")
-
-    mm_pre = list(range(start_syn-1, end_syn))
-    mm_post = list(range(start_syn-1, end_syn))
-
-    n_mm_pre = len(mm_pre)
-    n_mm_post = len(mm_post)
-    
-    if n_mm_pre > 0:
-        mm_pre = nest.Create('multimeter', n_mm_pre, {'record_from': ["V_m"], 'interval': .1})
-        [nest.Connect(mm_pre[i], pre_neurons[i]) for i in range (n_mm_pre)]
-    if n_mm_post > 0:
-        mm_post = nest.Create('multimeter', n_mm_post, {'record_from': ["V_m"], 'interval': .1})
-        [nest.Connect(mm_post[i], post_neurons[i]) for i in range (n_mm_post)]
-
-    #--------------------------------------------------------------------------
-    # Simulation in steps, log weight changes
-    #--------------------------------------------------------------------------
-    if verbose_sim: print("Simulate in steps  ------------------")
-    current_time = 0.0
+    # ------------------------------------------------------------------
+    # --- 3.  Simulate in chunks & log weights --------------------------
+    # ------------------------------------------------------------------
     weight_records = []
-
+    current_time   = 0.0
     while current_time < T_sim_ms:
         next_time = min(current_time + save_int_ms, T_sim_ms)
         nest.Simulate(next_time - current_time)
         current_time = next_time
 
-        record_now = {"time_ms": current_time}
-        for j, conn_obj in enumerate(connection_handles):
-            w_val = conn_obj.get("weight")
-            record_now[f"w_{j}"] = w_val
-        weight_records.append(record_now)
-        
-    #--------------------------------------------------------------------------
-    # Save weight evolution to CSV
-    #--------------------------------------------------------------------------
+        weight_records.append({"time_ms": current_time,
+                               **{f"w_{j}": conn.get("weight")
+                                  for j, conn in enumerate(connection_handles)}})
+
     df_w = pd.DataFrame(weight_records)
     df_w.to_csv("sim_stdp_evolution_line_summary.csv", index=False)
-    print("SIM: Saved synaptic weight evolution to 'sim_stdp_evolution_line_summary.csv'")
+    print("SIM: weights → sim_stdp_evolution_line_summary.csv")
 
-    #--------------------------------------------------------------------------
-    # Retrieve and save spike data
-    #--------------------------------------------------------------------------
-    events_pre = spike_rec_pre.get("events")
-    df_pre = pd.DataFrame({
-        "senders": events_pre["senders"],
-        "times":   events_pre["times"]
-    })
-    df_pre.to_csv(csv_file_pre, index=False)
-    print("SIM: Saved spikes of pre_neurons to", csv_file_pre)
+    # ------------------------------------------------------------------
+    # --- 4.  Save spikes — NOW 0‑based IDs -----------------------------
+    # ------------------------------------------------------------------
+    def save_spikes(recorder, fname, offset=1):
+        ev  = recorder.get("events")
+        ids = np.asarray(ev["senders"], dtype=int) - offset   # shift to 0‑based
+        pd.DataFrame({"senders": ids, "times": ev["times"]}).to_csv(fname,
+                                                                    index=False)
+        print(f"SIM: spikes → {fname}")
 
-    events_post = spike_rec_post.get("events")
-    df_post = pd.DataFrame({
-        "senders": events_post["senders"],
-        "times":   events_post["times"]
-    })
-    df_post.to_csv(csv_file_post, index=False)
-    print("SIM: Saved spikes of post_neurons to", csv_file_post)
+    save_spikes(spike_rec_pre,  csv_file_pre,  offset=1)
+    save_spikes(spike_rec_post, csv_file_post, offset=1)   # works for PRE+POST
 
-    #--------------------------------------------------------------------------
-    # Retrieve multimeter data
-    #--------------------------------------------------------------------------
-    if n_mm_pre > 0:
-        res_pre = [nest.GetStatus(mm_pre[i], 'events')[0] for i in range(n_mm_pre)]
-    if n_mm_post > 0:
-        res_post = [nest.GetStatus(mm_post[i], 'events')[0] for i in range(n_mm_post)]
-
-
-    #--------------------------------------------------------------------------
-    # Plot weight evolution with points
-    #--------------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # --- 5.  Diagnostics & plots (labels 0‑based) ----------------------
+    # ------------------------------------------------------------------
+    # weight evolution
     plt.figure(figsize=(8, 6))
-    for i in range(N):
-        # Plot each weight as markers (no connecting lines)
-        plt.plot(
-            df_w["time_ms"],
-            df_w[f"w_{i}"],
-            marker='o',
-            markersize=4,
-            linestyle='none',   # no line
-            label=f"Syn {i}"
-        )
-
-    plt.legend()
+    for i in range(start_syn,end_syn+1):
+        plt.plot(df_w["time_ms"], df_w[f"w_{i}"], marker="o",
+                 linestyle="none", label=f"Syn {i}")
     plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
-    plt.xlabel("Time (ms)")
-    plt.ylabel("Synaptic Weight")
-    plt.title("SIM: stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
-
+    plt.xticks(np.arange(0, T_sim_ms+1, plot_major_ticks_ms))
+    plt.xlabel("Time (ms)"); plt.ylabel("Weight")
+    plt.title("SIM: stdp_pl_synapse_hom — weight trace")
+    plt.legend()
     plt.tight_layout()
     if sim_plot_save:
         plt.savefig("sim_weights_alpha_forced_pl.png", dpi=150)
-    print("SIM: Saved synaptic weight plot to 'sim_weights_alpha_forced_pl.png'")
 
-    #--------------------------------------------------------------------------
-    # Plot raster of PRE- and POST-neurons
-    #--------------------------------------------------------------------------
-    plt.figure(figsize=(8, 6))
-    plt.subplot(211)
-    plt.scatter(df_pre["times"], df_pre["senders"], s=5, c='tab:blue')
-    plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
-    plt.ylabel('PRE-neuron IDs')
-    plt.title('SIM: Raster PRE (iaf_psc_alpha)')
+    """
+    # raster
+    def raster(df, ax, title, color):
+        ax.scatter(df["times"], df["senders"], s=5, c=color)
+        ax.set_xlim(0, T_sim_ms)
+        ax.set_xticks(np.arange(0, T_sim_ms+1, plot_major_ticks_ms))
+        ax.set_ylabel("Neuron ID"); ax.set_title(title)
+    """
+    # raster
+    def raster(df_total, ax, title, color, start_syn, end_syn):
+        df = df_total[(df_total["senders"] >= start_syn) & (df_total["senders"] <= end_syn)]
+        ax.scatter(df["times"], df["senders"], s=5, c=color)
+        ax.set_xlim(0, T_sim_ms)
+        ax.set_xticks(np.arange(0, T_sim_ms+1, plot_major_ticks_ms))
+        ax.set_ylabel("Neuron ID"); ax.set_title(title)
+        
+    df_pre  = pd.read_csv(csv_file_pre)
+    df_post = pd.read_csv(csv_file_post)
 
-    plt.subplot(212)
-    plt.scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
-    plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
-    plt.xlabel('Time (ms)')
-    plt.ylabel('POST-neuron IDs')
-    plt.title('SIM: Raster POST (iaf_psc_alpha)')
-
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    raster(df_pre,  ax1, "SIM: PRE raster",  "tab:blue", start_syn, end_syn)
+    raster(df_post, ax2, "SIM: POST raster", "tab:red", start_syn+N, end_syn+N)
+    ax2.set_xlabel("Time (ms)")
     plt.tight_layout()
     if sim_plot_save:
         plt.savefig("sim_raster_alpha_forced_pl.png", dpi=150)
-    print("SIM: Saved spike raster to 'sim_raster_alpha_forced_pl.png'")
 
-    #--------------------------------------------------------------------------
-    # Plot membrane potentials
-    #--------------------------------------------------------------------------
-    if plot_mm:
-        if n_mm_pre > 0:
-            plt.figure('Membrane Voltage PRE (iaf_psc_alpha)')
-            for i in reversed(range(n_mm_pre)):
-                plt.subplot(n_mm_pre,1,n_mm_pre-i)
-                plt.plot(res_pre[i]['times'], res_pre[i]['V_m'], label='neu '+str(start_syn+i))
-                plt.legend()
-                plt.xlim(0, T_sim_ms)
-                plt.xticks(np.arange(0, T_sim_ms + 1, 10))
-                plt.ylabel('Vm [mV]')
-                if i==n_mm_pre-1:
-                    plt.title('SIM: PRE-neurons')
-            plt.xlabel('Time [ms]')
-    
-        if n_mm_post > 0:
-            plt.figure('Membrane Voltage POST (iaf_psc_alpha)')
-            for i in reversed(range(n_mm_post)):
-                plt.subplot(n_mm_post,1,n_mm_post-i)
-                plt.plot(res_post[i]['times'], res_post[i]['V_m'], label='neu '+str(start_syn+i))
-                plt.legend()
-                plt.xlim(0, T_sim_ms)
-                plt.xticks(np.arange(0, T_sim_ms + 1, 10))
-                plt.ylabel('Vm [mV]')
-                if i==n_mm_post-1:
-                    plt.title('SIM: POST-neurons')
-            plt.xlabel('Time [ms]')
-
-    
-    sim_summary = {}
-    
-    for syn_i in range(start_syn, end_syn+1):
-           sim_summary[syn_i] = {
-            "syn_ID": syn_i,
-               "start_syn_value": df_w[f"w_{syn_i-1}"].loc[0],
-            "final_syn_value": df_w[f"w_{syn_i-1}"].loc[len(df_w)-1]
-           }
+    # ------------------------------------------------------------------
+    # --- 6.  Pack minimal summary -------------------------------------
+    # ------------------------------------------------------------------
+    sim_summary = {
+        i: {"syn_ID": i,
+            "start_syn_value": df_w[f"w_{i}"].iloc[0],
+            "final_syn_value": df_w[f"w_{i}"].iloc[-1]}
+        for i in range(start_syn, end_syn+1)
+    }
 
     return df_w, sim_summary, plot_display

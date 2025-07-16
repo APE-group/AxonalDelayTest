@@ -59,37 +59,4 @@ def add_rand_events(config_pms, additional_syn_N=3, max_event_N=5):
     cfg["N"] += additional_syn_N
     return cfg
 
-def add_rand_events_old(config_pms, additional_syn_N = 3, max_event_N = 5):
-    rand_W_init = [random.uniform(config_pms["W_min"], config_pms["W_max"]) for _ in range(additional_syn_N)]
-    rounded_rand_W_init = [round(_,1) for _ in rand_W_init]
-    config_pms["W_init"] += rounded_rand_W_init
 
-    rand_dendritic_delay_ms = [random.uniform(config_pms["min_dendritic_delay_ms"], config_pms["max_dendritic_delay_ms"]) for _ in range(additional_syn_N)]
-    rounded_rand_dendritic_delay_ms = [round(_,1) for _ in rand_dendritic_delay_ms]
-    config_pms["dendritic_delay_ms"] += rounded_rand_dendritic_delay_ms
-
-    rand_axonal_delay_ms = [random.uniform(config_pms["min_axonal_delay_ms"], config_pms["max_axonal_delay_ms"]) for _ in range(additional_syn_N)]
-    rounded_rand_axonal_delay_ms = [round(_,1) for _ in rand_axonal_delay_ms]
-    config_pms["axonal_delay_ms"] += rounded_rand_axonal_delay_ms
-
-    rounded_rand_spike_train_pre_ms = [
-    sorted({
-        round(random.uniform(0.1, config_pms["T_sim_ms"]-20), 1)
-        for _ in range(random.randint(1, max_event_N))
-    }) + [config_pms["T_sim_ms"]-10]
-    for _ in range(additional_syn_N)
-    ]
-    config_pms["spike_train_pre_ms"] += rounded_rand_spike_train_pre_ms
-
-    rounded_rand_spike_train_post_ms = [
-    sorted({
-        round(random.uniform(0.1, config_pms["T_sim_ms"]-20), 1)
-        for _ in range(random.randint(1, max_event_N))
-    })
-    for _ in range(additional_syn_N)
-    ]
-    config_pms["spike_train_post_ms"] += rounded_rand_spike_train_post_ms
-
-    config_pms["N"] += additional_syn_N
-    
-    return config_pms
