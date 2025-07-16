@@ -37,9 +37,8 @@ from add_rand_events_lib import add_rand_events
     
     
 if __name__ == "__main__":
-    random.seed(123456)
     config_pms = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
-    config_pms = add_rand_events(config_pms, additional_syn_N = 2, max_event_N = 5)
+    config_pms = add_rand_events(config_pms)
 
     with open('current_config.yaml', 'w') as file:
         yaml.dump(config_pms, file)
