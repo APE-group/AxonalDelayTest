@@ -56,7 +56,6 @@ def add_rand_events(config_pms, additional_syn_N=3, max_event_N=5):
         cfg["spike_train_pre_ms"].append(one_train())
         cfg["spike_train_post_ms"].append(one_train())
 
-    cfg["N"] += additional_syn_N
     return cfg
 
 

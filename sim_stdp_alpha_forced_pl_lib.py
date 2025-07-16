@@ -16,6 +16,37 @@ import matplotlib.pyplot as plt
 # ----------------------------------------------------------------------
 # Top‑level API
 # ----------------------------------------------------------------------
+def get_syn_color(k):      # cycle through C0…C9
+    return f"C{k % 10}"
+
+def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
+    plt.figure()
+    plt.title(label)
+    plt.xlabel("Time (ms)")
+    plt.ylabel("Neuron ID")
+
+    for i in range(start_syn, end_syn+1):
+        times = spike_dict.get(i+offset, [])#[i]
+        plt.scatter(times, [i+offset]*len(times),
+                    color=get_syn_color(i), marker='.')
+    plt.xlim(tmin, tmax)
+    plt.yticks(range(start_syn+offset, end_syn+offset+1))
+    if fname:
+        plt.savefig(fname)
+        
+def df_to_spikedict(df):
+    """
+    Convert a DataFrame with columns ['senders', 'times']
+    into a dict  {id: sorted list of times}.
+    """
+    return (
+        df.groupby("senders")["times"]
+          .apply(lambda s: sorted(s.tolist()))
+          .to_dict()
+    )
+
+        
+
 def sim_stdp_alpha_forced_pl(cfg):
     """
     Run the same forced‑spike STDP experiment as before **but save every
@@ -192,35 +223,30 @@ def sim_stdp_alpha_forced_pl(cfg):
     plt.legend()
     plt.tight_layout()
     if sim_plot_save:
-        plt.savefig("sim_weights_alpha_forced_pl.png", dpi=150)
-
-    """
-    # raster
-    def raster(df, ax, title, color):
-        ax.scatter(df["times"], df["senders"], s=5, c=color)
-        ax.set_xlim(0, T_sim_ms)
-        ax.set_xticks(np.arange(0, T_sim_ms+1, plot_major_ticks_ms))
-        ax.set_ylabel("Neuron ID"); ax.set_title(title)
-    """
-    # raster
-    def raster(df_total, ax, title, color, start_syn, end_syn):
-        df = df_total[(df_total["senders"] >= start_syn) & (df_total["senders"] <= end_syn)]
-        ax.scatter(df["times"], df["senders"], s=5, c=color)
-        ax.set_xlim(0, T_sim_ms)
-        ax.set_xticks(np.arange(0, T_sim_ms+1, plot_major_ticks_ms))
-        ax.set_ylabel("Neuron ID"); ax.set_title(title)
+        plt.savefig("simulated_synaptic_evolution.png", dpi=150)
         
     df_pre  = pd.read_csv(csv_file_pre)
     df_post = pd.read_csv(csv_file_post)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
-    raster(df_pre,  ax1, "SIM: PRE raster",  "tab:blue", start_syn, end_syn)
-    raster(df_post, ax2, "SIM: POST raster", "tab:red", start_syn+N, end_syn+N)
-    ax2.set_xlabel("Time (ms)")
+    pre_dict  = df_to_spikedict(df_pre)
+    post_dict = df_to_spikedict(df_post)
+
+    tmin, tmax = 0, T_sim_ms                    
+
+    plot_raster(pre_dict, 0, tmin, tmax,
+                start_syn, end_syn, "SIM: PRE raster",
+                "simulated_presyn_raster.png" if sim_plot_save else None)
+
+    plot_raster(post_dict, N, tmin, tmax,
+                start_syn, end_syn, "SIM: POST raster",
+                "simulated_postsyn_raster.png" if sim_plot_save else None)
+
     plt.tight_layout()
+
     if sim_plot_save:
         plt.savefig("sim_raster_alpha_forced_pl.png", dpi=150)
 
+        
     # ------------------------------------------------------------------
     # --- 6.  Pack minimal summary -------------------------------------
     # ------------------------------------------------------------------

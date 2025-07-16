@@ -149,13 +149,13 @@ def plot_syn_evolution(trajs, tmin, tmax, start_syn, end_syn, save):
         plt.plot(x, y, marker="o", color=get_syn_color(sid), label=f"Syn {sid}")
     plt.xlim(tmin, tmax)
     plt.xlabel("Time (ms)"); plt.ylabel("Weight")
-    plt.title(f"Synaptic evolution (Syn {start_syn}…{end_syn})")
+    plt.title(f"PRED: Synaptic evolution (Syn {start_syn}…{end_syn})")
     plt.legend()
     if save:
         plt.savefig("predicted_synaptic_evolution.png")
 
 
-def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, color, fname):
+def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
     plt.figure()
     plt.title(label); plt.xlabel("Time (ms)"); plt.ylabel("Neuron ID")
     for i in range(start_syn, end_syn+1):
@@ -245,10 +245,10 @@ def predict_stdp_alpha_forced_pl(cfg):
 
     # --- plots --------------------------------------------------------
     plot_raster(pre_arr, 0, tmin, tmax, start_syn, end_syn,
-                "Pred: PRE raster", "tab:blue",
+                "PRED: PRE raster", 
                 "predicted_presyn_raster.png" if plot_save else None)
     plot_raster(post_arr, N, tmin, tmax, start_syn, end_syn,
-                "Pred: POST raster", "tab:red",
+                "PRED: POST raster", 
                 "predicted_postsyn_raster.png" if plot_save else None)
     plot_syn_evolution(trajs, tmin, tmax, start_syn, end_syn, plot_save)
 
