@@ -385,7 +385,7 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
         color = get_synapse_color(syn_id)
         plt.plot(times_ms, weights, label=f"Syn {syn_id}", color=color, marker='o')
 
-    plt.title(f"Synaptic Evolution, synapses {start_syn}..{end_syn}")
+    plt.title(f"PRED: Syn Evolution, syns {start_syn}..{end_syn}")
     plt.xlabel("Time (ms)")
     plt.ylabel("Weight")
     plt.xlim(time_min_ms, time_max_ms)
@@ -401,7 +401,7 @@ def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
     We'll set integer y-ticks from start_syn..end_syn only.
     """
     plt.figure()
-    plt.title(f"Raster Plot: Pre-Synaptic Neurons {start_syn}..{end_syn} (ms)")
+    plt.title(f"PRED: Raster Pre-Syn Neus {start_syn}..{end_syn} (ms)")
     plt.xlabel("Time (ms)")
     plt.ylabel("Neuron ID (Pre)")
 
@@ -425,7 +425,7 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
     We'll set integer y-ticks from (start_syn+N)..(end_syn+N).
     """
     plt.figure()
-    plt.title(f"Raster Plot: Post-Synaptic Neurons {start_syn}..{end_syn} (ms)")
+    plt.title(f"PRED: Raster Post-Syn Neus {start_syn}..{end_syn} (ms)")
     plt.xlabel("Time (ms)")
     plt.ylabel("Neuron ID (Post)")
 
@@ -510,7 +510,7 @@ def predict_stdp_alpha_forced_pl(config):
     final_weights         = [0.0]*N
     synapses_trajectories = {}
 
-    summary_file = "stdp_evolution_line_summary.csv"
+    summary_file = "pred_stdp_evolution_line_summary.csv"
     with open(summary_file, "w", newline="") as f_out:
         writer = csv.writer(f_out)
         writer.writerow([

@@ -245,8 +245,8 @@ def sim_stdp_alpha_forced_pl(cfg):
     # Save weight evolution to CSV
     #--------------------------------------------------------------------------
     df_w = pd.DataFrame(weight_records)
-    df_w.to_csv("weights_alpha_forced_pl.csv", index=False)
-    print("Saved synaptic weight evolution to 'weights_alpha_forced_pl.csv'")
+    df_w.to_csv("sim_stdp_evolution_line_summary.csv", index=False)
+    print("SIM: Saved synaptic weight evolution to 'sim_stdp_evolution_line_summary.csv'")
 
     #--------------------------------------------------------------------------
     # Retrieve and save spike data
@@ -257,7 +257,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         "times":   events_pre["times"]
     })
     df_pre.to_csv(csv_file_pre, index=False)
-    print("Saved spikes of pre_neurons to", csv_file_pre)
+    print("SIM: Saved spikes of pre_neurons to", csv_file_pre)
 
     events_post = spike_rec_post.get("events")
     df_post = pd.DataFrame({
@@ -265,7 +265,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         "times":   events_post["times"]
     })
     df_post.to_csv(csv_file_post, index=False)
-    print("Saved spikes of post_neurons to", csv_file_post)
+    print("SIM: Saved spikes of post_neurons to", csv_file_post)
 
     #--------------------------------------------------------------------------
     # Retrieve multimeter data
@@ -297,12 +297,12 @@ def sim_stdp_alpha_forced_pl(cfg):
     plt.minorticks_on()
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
-    plt.title("STDP with stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
+    plt.title("SIM: stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
 
     plt.tight_layout()
     if sim_plot_save:
         plt.savefig("sim_weights_alpha_forced_pl.png", dpi=150)
-    print("Saved synaptic weight plot to 'weights_alpha_forced_pl.png'")
+    print("SIM: Saved synaptic weight plot to 'sim_weights_alpha_forced_pl.png'")
 
     #--------------------------------------------------------------------------
     # Plot raster of PRE- and POST-neurons
@@ -314,7 +314,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
     plt.minorticks_on()
     plt.ylabel('PRE-neuron IDs')
-    plt.title('Raster: PRE (iaf_psc_alpha)')
+    plt.title('SIM: Raster PRE (iaf_psc_alpha)')
 
     plt.subplot(212)
     plt.scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
@@ -323,12 +323,12 @@ def sim_stdp_alpha_forced_pl(cfg):
     plt.minorticks_on()
     plt.xlabel('Time (ms)')
     plt.ylabel('POST-neuron IDs')
-    plt.title('Raster: POST (iaf_psc_alpha)')
+    plt.title('SIM: Raster POST (iaf_psc_alpha)')
 
     plt.tight_layout()
     if sim_plot_save:
         plt.savefig("sim_raster_alpha_forced_pl.png", dpi=150)
-    print("Saved spike raster to 'raster_alpha_forced_pl.png'")
+    print("SIM: Saved spike raster to 'sim_raster_alpha_forced_pl.png'")
 
     #--------------------------------------------------------------------------
     # Plot membrane potentials
@@ -344,7 +344,7 @@ def sim_stdp_alpha_forced_pl(cfg):
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
                 if i==n_mm_pre-1:
-                    plt.title('PRE-neurons')
+                    plt.title('SIM: PRE-neurons')
             plt.xlabel('Time [ms]')
     
         if n_mm_post > 0:
@@ -357,7 +357,7 @@ def sim_stdp_alpha_forced_pl(cfg):
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
                 if i==n_mm_post-1:
-                    plt.title('POST-neurons')
+                    plt.title('SIM: POST-neurons')
             plt.xlabel('Time [ms]')
 
     
