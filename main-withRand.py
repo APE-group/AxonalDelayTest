@@ -50,7 +50,6 @@ if __name__ == "__main__":
     # sim 2)convert the dictionary to a Pandas DataFrame
     #    Each dictionary entry has keys: ["syn_ID", "start_syn_value", "final_syn_value"]
     df_sim_summary = pd.DataFrame.from_dict(sim_summary, orient='index')
-
     
     # sim 3) Save to CSV
     output_sim_csv = config_pms["output_sim_csv"]
@@ -58,7 +57,6 @@ if __name__ == "__main__":
     print(f"Simulation summary saved to {output_sim_csv}.")
 
     # prediction 1) Run the STDP routine, which returns a dictionary
-
     prediction_summary = predict_stdp_alpha_forced_pl(config_pms)
     
     # prediction 2) Convert the dictionary to a Pandas DataFrame

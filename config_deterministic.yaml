@@ -19,6 +19,12 @@
 #
 
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
+
+random_seed: 123456
+Total_number_described_synapses_for_sim: 16 # total number of synapses described in this file
+add_rand_syn: 0
+max_rand_events_per_syn: 5
+
 axonal_support: True
 
 verbose_sim: False
@@ -27,7 +33,7 @@ verbose_prediction_summary: True
 sim_plot_save: True
 prediction_plot_save: True
 
-plot_display: False
+plot_display: True
 
 # Files storing spikes of pre/post synaptic neurons
 csv_file_pre: 'spikes_pre_neurons.csv'
@@ -36,7 +42,6 @@ csv_file_post: 'spikes_post_neurons.csv'
 # Simulation parameters
 T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
-Total_number_described_synapses_for_sim: 16 # total number of synapses described in this file
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_synapse: 11
 #end_synapse: 13
