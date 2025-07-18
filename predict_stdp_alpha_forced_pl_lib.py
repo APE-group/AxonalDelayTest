@@ -599,13 +599,19 @@ def predict_stdp_alpha_forced_pl(config):
 
     # Plot
     global_min_time_ms, global_max_time_ms = 0, T_sim_ms
-    plot_raster(arrived_pre_dict, 0, global_min_time_ms, global_max_time_ms,
+    plot_raster(pre_spikes_dict, 0, global_min_time_ms, global_max_time_ms,
                 start_syn, end_syn, "PRED: PRE-neurons", 
-                "predicted_presyn_raster.png" if prediction_plot_save else None)
-    plot_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms,
+                "predicted_presynneu_raster.png" if prediction_plot_save else None)
+    plot_raster(post_spikes_dict, N, global_min_time_ms, global_max_time_ms,
                      start_syn, end_syn, "PRED: POST-neurons", 
-                "predicted_postsyn_raster.png" if prediction_plot_save else None)
+                "predicted_postsynneu_raster.png" if prediction_plot_save else None)
     plot_synaptic_evolution(synapses_trajectories, global_min_time_ms, global_max_time_ms,
                             start_syn, end_syn, prediction_plot_save)
+    plot_raster(arrived_pre_dict, 0, global_min_time_ms, global_max_time_ms,
+                start_syn, end_syn, "PRED: PRE-syn event arrival time", 
+                "predicted_presynevent_raster.png" if prediction_plot_save else None)
+    plot_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms,
+                     start_syn, end_syn, "PRED: POST-syn event arrival time", 
+                "predicted_postsynevent_raster.png" if prediction_plot_save else None)
 
     return analysis_summary

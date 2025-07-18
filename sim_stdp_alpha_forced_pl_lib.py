@@ -345,11 +345,11 @@ def sim_stdp_alpha_forced_pl(cfg):
 
     plot_raster(pre_dict, 0, tmin, tmax,
                 start_syn, end_syn, "SIM: PRE-neurons",
-                "simulated_presyn_raster.png" if sim_plot_save else None)
+                "simulated_presynneu_raster.png" if sim_plot_save else None)
 
     plot_raster(post_dict, N, tmin, tmax,
                 start_syn, end_syn, "SIM: POST-neurons",
-                "simulated_postsyn_raster.png" if sim_plot_save else None)
+                "simulated_postsynneu_raster.png" if sim_plot_save else None)
     
     #--------------------------------------------------------------------------
     # Plot membrane potentials
