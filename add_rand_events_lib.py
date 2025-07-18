@@ -40,22 +40,32 @@ def add_rand_events(config_pms, additional_syn_N=3, max_event_N=5):
     additional_syn_N = cfg["add_rand_syn"]
     max_event_N = cfg["max_rand_events_per_syn"]
     
+    
     for syn_idx in range(1, additional_syn_N+1):
         rng = random.Random(base_seed + cfg["N"] + syn_idx)   # per‑synapse RNG
 
         # 1. weight & delays
         cfg["W_init"].append(round(rng.uniform(Wmin, Wmax), 1))
-        cfg["dendritic_delay_ms"].append(round(rng.uniform(dmin, dmax), 1))
-        cfg["axonal_delay_ms"].append(round(rng.uniform(amin, amax), 1))
+        dd = round(rng.uniform(dmin, dmax), 1)
+        cfg["dendritic_delay_ms"].append(dd)
+        ad = round(rng.uniform(amin, amax), 1)
+        cfg["axonal_delay_ms"].append(ad)
 
         # 2. spike trains
+        T_guard_ms = 20     
+        T_last_prespike_ms = 10
+        assert (T_guard_ms > T_last_prespike_ms and T_guard_ms < T), "Please, augment T_sim_ms in config file"
+
         def one_train():
+            #assuming ~5ms the max reaction time of the neuron to the external stimulus
             n_ev = rng.randint(1, max_event_N)
             # use a set to avoid duplicates; round to 0.1 ms resolution
-            return sorted({round(rng.uniform(0.1, T), 1) for _ in range(n_ev)})
+            return sorted({round(rng.uniform(0.1, (T-T_guard_ms)), 1) for _ in range(n_ev)})
         cfg["spike_train_pre_ms"].append(one_train())
         cfg["spike_train_post_ms"].append(one_train())
-
+        last_pre = [round(float(T-T_last_prespike_ms),1)]
+        cfg["spike_train_pre_ms"].append(last_pre)
+        
     return cfg
 
 

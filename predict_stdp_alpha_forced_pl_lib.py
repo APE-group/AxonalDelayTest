@@ -443,13 +443,17 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
 
 def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
     plt.figure()
-    plt.title(label); plt.xlabel("Time (ms)"); plt.ylabel("Neuron ID")
+    plt.title(label)
+    plt.xlabel("Time (ms)")
+    plt.ylabel("Neuron ID")
+    
     for i in range(start_syn, end_syn+1):
         times = spike_dict[i]
         plt.scatter(times, [i+offset]*len(times),
                     color=get_synapse_color(i), marker='.')
     plt.xlim(tmin, tmax)
     plt.yticks(range(start_syn+offset, end_syn+offset+1))
+    plt.tight_layout()
     if fname:
         plt.savefig(fname)
     

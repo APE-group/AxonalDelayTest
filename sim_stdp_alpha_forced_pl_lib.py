@@ -325,8 +325,8 @@ def sim_stdp_alpha_forced_pl(cfg):
 
     plt.legend()
     plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
+    #plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
+    #plt.minorticks_on()
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
     plt.title(f"SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
@@ -391,14 +391,4 @@ def sim_stdp_alpha_forced_pl(cfg):
             "final_syn_value": df_w[f"w_{i}"].iloc[-1]}
         for i in range(start_syn, end_syn+1)
     }
-    """
-    sim_summary = {}
-    
-    for syn_i in range(start_syn, end_syn+1):
-           sim_summary[syn_i] = {
-            "syn_ID": syn_i,
-               "start_syn_value": df_w[f"w_{syn_i-1}"].loc[0],
-            "final_syn_value": df_w[f"w_{syn_i-1}"].loc[len(df_w)-1]
-           }
-    """
     return df_w, sim_summary, plot_display
