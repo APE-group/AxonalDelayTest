@@ -150,7 +150,7 @@ def stdp_pl_synapse_hom_causal(
 
     # 2) "Fake" initial row => no real spikes yet
     writer.writerow([syn_id, 0, None, None, None, None, None, 0.0, w])
-    trajectory.append((None, None, None, None, 0.0, 0.0, 0.0, w))
+    trajectory.append((syn_id, 0, None, None, None, None, 0.0, 0.0, 0.0, w))
 
     # 3) Build global event list
     #   For each pre index => pre_t_raw, pre_t_arr
@@ -234,6 +234,7 @@ def stdp_pl_synapse_hom_causal(
                     None        # partial => no real update
                 ])
                 trajectory.append((
+                    syn_id, event_idx,
                     pr2_raw, po2_raw,
                     pr2_arr, po2_arr,
                     dt2,
@@ -256,6 +257,7 @@ def stdp_pl_synapse_hom_causal(
                 w_after_lumpsum
             ])
             trajectory.append((
+                syn_id, event_idx,
                 pre_t_raw, None,
                 pre_t_arr, None,
                 lumpsum_dt,
@@ -299,6 +301,7 @@ def stdp_pl_synapse_hom_causal(
                     None
                 ])
                 trajectory.append((
+                    syn_id, event_idx,
                     pr2_raw, po2_raw,
                     pr2_arr, po2_arr,
                     dt2,
@@ -321,6 +324,7 @@ def stdp_pl_synapse_hom_causal(
                 w_after_lumpsum
             ])
             trajectory.append((
+                syn_id, event_idx,
                 pre_t_raw, None,
                 pre_t_arr, None,
                 lumpsum_dt,
@@ -364,7 +368,7 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
         weights  = []
 
         for evt in trajectory:
-            (pre_s, post_s, pre_a, post_a, dt_ms, wB, dW, wA) = evt
+            (syn_id, event_id, pre_s, post_s, pre_a, post_a, dt_ms, wB, dW, wA) = evt
             if pre_s is None and post_s is None:
                 # the "fake" row => place it at time_min
                 times_ms.append(time_min_ms)
@@ -581,17 +585,17 @@ def predict_stdp_alpha_forced_pl(config):
                 for evt in track:
                     if evt[0] is None and evt[1] is None:
                         wA= evt[-1]
-                        line_e= f"(NoSpikes, dt_ms=0.000, dW=0.000, W={wA:.3f})"
+                        line_e= f"(NoSpikes, dt_ms=0.000, dW=0.000, W={wA:.3f})\n"
                     else:
-                        (p_s, po_s, p_a, po_a, dt_m, wB, dW, wA)= evt
+                        (syn_id, event_id, p_s, po_s, p_a, po_a, dt_m, wB, dW, wA)= evt
                         wA_str= f"{wA:.5f}" if wA is not None else "None"
                         line_e=(
-                            f"(pre_spike_ms={p_s}, post_spike_ms={po_s}, pre_arr_ms={p_a}, post_arr_ms={po_a}, "
-                            f"dt_ms={dt_m:.3f}, w_before={wB:.3f}, dW={dW:.3f}, w_after={wA_str})"
+                            f"(event_id={event_id}, pre_spike_ms={p_s}, post_spike_ms={po_s}, pre_arr_ms={p_a}, post_arr_ms={po_a}, "
+                            f"dt_ms={dt_m:.3f},\n w_before={wB:.3f}, dW={dW:.3f}, w_after={wA_str})\n"
                         )
                     event_lines.append(line_e)
                 all_event_str= " ".join(event_lines)
-                print(f"Syn {syn_i}: #changes={changes}, init={w_init:.4f}, final={w_final:.4f} => {all_event_str}")
+                print(f"Syn {syn_i}: #changes={changes}, init={w_init:.4f}, final={w_final:.4f} => \n {all_event_str}")
             else:
                 print(f"Syn {syn_i}: #changes={changes}, init={w_init:.4f}, final={w_final:.4f} => No step-by-step data")
 
