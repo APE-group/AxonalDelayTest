@@ -394,7 +394,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     # ------------------------------------------------------------------
     sim_summary = {
         i: {"syn_ID": i,
-            "start_syn_value": df_w[f"w_{i}"].iloc[0],
+            "start_syn_value": W_init[i],#df_w[f"w_{i}"].iloc[0],
             "final_syn_value": df_w[f"w_{i}"].iloc[-1]}
         for i in range(start_syn, end_syn+1)
     }
