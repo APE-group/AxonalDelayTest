@@ -91,6 +91,8 @@ def sim_stdp_alpha_forced_pl(cfg):
         axonal_delay      = cfg["axonal_delay_ms"]
     else:
         delay             = cfg["dendritic_delay_ms"]
+        axonal_delay      = cfg["axonal_delay_ms"]
+        spike_train_pre_ms= [np.array(spike_train_pre_ms[i])+axonal_delay[i] for i in range(len(axonal_delay))] 
     
     W_init                = cfg["W_init"]
 

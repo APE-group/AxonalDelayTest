@@ -172,16 +172,17 @@ def stdp_pl_synapse_hom_causal(
                 # dt_ms <= 0 => lumpsum key => (pre_t_arr, i_pre)
                 event_time = pre_t_arr
 
-            all_events.append((
-                event_time,   # for sorting
-                i_pre,
-                j_post,
-                dt_ms,
-                pre_t_raw, 
-                post_t_raw,
-                pre_t_arr,
-                post_t_arr
-            ))
+            if np.abs(dt_ms)>1e-10:
+                all_events.append((
+                    event_time,   # for sorting
+                    i_pre,
+                    j_post,
+                    dt_ms,
+                    pre_t_raw, 
+                    post_t_raw,
+                    pre_t_arr,
+                    post_t_arr
+                ))
 
     # 4) Sort by event_time ascending
     all_events.sort(key=lambda x: x[0])
@@ -490,17 +491,21 @@ def predict_stdp_alpha_forced_pl(config):
     prediction_plot_save = config["prediction_plot_save"]
     T_sim_ms             = config["T_sim_ms"]
 
+    axonal_support       = config["axonal_support"]
+    init_weights_list    = config["W_init"]
+    
+    if axonal_support:
+        axonal_delays_list    = config["axonal_delay_ms"]
+        dendritic_delays_list = config["dendritic_delay_ms"]
+    else:
+        axonal_delays_list    = [0.0] * len(config["axonal_delay_ms"])
+        dendritic_delays_list = config["dendritic_delay_ms"]
+   
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
         raise ValueError("start_synapse and end_synapse must be integers.")
 
     if not (0 <= start_syn <= end_syn < N):    
         raise ValueError(f"Invalid syn range: {start_syn}..{end_syn}, must be in [0..{N-1}]")
-
-    init_weights_list     = config.get("W_init", None)
-    axonal_delays_list    = config.get("axonal_delay_ms", None)
-    dendritic_delays_list = config.get("dendritic_delay_ms", None)
-    if init_weights_list is None or len(init_weights_list) != N:
-        raise ValueError("W_init must be list of length N.")
 
     axon_default  = 5.0
     dend_default  = 0.1
