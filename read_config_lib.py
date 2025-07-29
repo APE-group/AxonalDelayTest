@@ -44,6 +44,7 @@ def read_config(name_without_path):
         
         cfg_pms["T_sim_ms"] = cfg["T_sim_ms"]
         cfg_pms["save_int_ms"] = cfg["save_int_ms"]
+        cfg_pms["resolution"] = cfg["resolution"]
         
         # If user doesn't specify, default to [1..N]
         cfg_pms["start_syn"] = cfg.get("start_syn", 0)

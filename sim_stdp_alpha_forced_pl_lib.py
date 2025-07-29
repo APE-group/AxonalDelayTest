@@ -75,6 +75,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
+    resolution            = cfg["resolution"]
     N                     = cfg["N"]
 
     # If user doesn't specify, default to [0..N-1]
@@ -116,7 +117,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     # Reset and configure NEST kernel
     #--------------------------------------------------------------------------
     nest.ResetKernel()
-    nest.SetKernelStatus({"resolution": 0.1})
+    nest.SetKernelStatus({"resolution": resolution})
     nest.set_verbosity('M_ERROR')
 
     #--------------------------------------------------------------------------
@@ -292,7 +293,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     df_pre = pd.DataFrame({
         #"senders": events_pre["senders"],
         "senders": np.asarray(events_pre["senders"], dtype=int) - offset,
-        "times":   events_pre["times"]
+        "times":   np.around(events_pre["times"],decimals=int(np.log(1/resolution)))
     })
     df_pre.to_csv(csv_file_pre, index=False)
     print("SIM: Saved spikes of pre_neurons to", csv_file_pre)
@@ -301,7 +302,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     df_post = pd.DataFrame({
         #"senders": events_post["senders"],
         "senders": np.asarray(events_post["senders"], dtype=int) - offset,
-        "times":   events_post["times"]
+        "times":   np.around(events_post["times"],decimals=int(np.log(1/resolution)))
     })
     df_post.to_csv(csv_file_post, index=False)  
     print("SIM: Saved spikes of post_neurons to", csv_file_post)

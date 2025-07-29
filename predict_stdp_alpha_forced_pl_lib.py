@@ -118,7 +118,8 @@ def stdp_pl_synapse_hom_causal(
     tau_plus_ms, lambda_pmt, alpha, mu, w_0,
     w_init,
     writer,
-    initial_time_for_plot_ms
+    initial_time_for_plot_ms,
+    resolution
 ):
     """
     Lumpsum version of stdp_pl_synapse_hom for both LTD(dt<0) and LTP(dt>0).
@@ -160,7 +161,7 @@ def stdp_pl_synapse_hom_causal(
         pre_t_arr = pre_times_arr[i_pre]
         for j_post, post_t_raw in enumerate(post_times_raw):
             post_t_arr = post_times_arr[j_post]
-            dt_ms = post_t_arr - pre_t_arr
+            dt_ms = np.around(post_t_arr - pre_t_arr,decimals=int(np.log(1/resolution)))
 
             # event_time for lumpsum grouping:
             #  LTP => post arrival => lumpsum if (dt>0, same post_arr, same j_post)
@@ -172,18 +173,17 @@ def stdp_pl_synapse_hom_causal(
                 # dt_ms <= 0 => lumpsum key => (pre_t_arr, i_pre)
                 event_time = pre_t_arr
 
-            if np.abs(dt_ms)>1e-10:
-                all_events.append((
-                    event_time,   # for sorting
-                    i_pre,
-                    j_post,
-                    dt_ms,
-                    pre_t_raw, 
-                    post_t_raw,
-                    pre_t_arr,
-                    post_t_arr
-                ))
-
+            all_events.append((
+                event_time,   # for sorting
+                i_pre,
+                j_post,
+                dt_ms,
+                pre_t_raw, 
+                post_t_raw,
+                pre_t_arr,
+                post_t_arr
+            ))
+    
     # 4) Sort by event_time ascending
     all_events.sort(key=lambda x: x[0])
 
@@ -197,12 +197,12 @@ def stdp_pl_synapse_hom_causal(
          pre_t_raw, post_t_raw,
          pre_t_arr, post_t_arr) = all_events[i]
 
-        if dt_ms == 0:
+        if np.abs(dt_ms) < 1e-10:
             # skip or handle corner case
             i += 1
             continue
 
-        if dt_ms > 0:
+        elif dt_ms > 0:
             # LTP lumpsum => group all consecutive events with the same (post_t_arr, j_post)
             w_before = w
             lumpsum = 0.0
@@ -490,6 +490,7 @@ def predict_stdp_alpha_forced_pl(config):
     csv_file_post        = config["csv_file_post"]
     prediction_plot_save = config["prediction_plot_save"]
     T_sim_ms             = config["T_sim_ms"]
+    resolution           = config["resolution"]
 
     axonal_support       = config["axonal_support"]
     init_weights_list    = config["W_init"]
@@ -519,8 +520,8 @@ def predict_stdp_alpha_forced_pl(config):
         axon_d  = float( safe_get_list_item(axonal_delays_list, i, axon_default) )
         dend_d  = float( safe_get_list_item(dendritic_delays_list, i, dend_default) )
 
-        arrived_pre_dict[i]  = [t + axon_d  for t in pre_spikes_dict[i]]
-        arrived_post_dict[i] = [t + dend_d  for t in post_spikes_dict[i]]
+        arrived_pre_dict[i]  = np.around([t + axon_d  for t in pre_spikes_dict[i]],decimals=int(np.log(1/resolution)))
+        arrived_post_dict[i] = np.around([t + dend_d  for t in post_spikes_dict[i]],decimals=int(np.log(1/resolution)))
 
     all_arr_pre  = [t for i in range(N) for t in arrived_pre_dict[i]]
     all_arr_post = [t for i in range(N) for t in arrived_post_dict[i]]
@@ -557,7 +558,8 @@ def predict_stdp_alpha_forced_pl(config):
                 tau_plus_ms, lambda_pmt, alpha, mu, w_0,
                 w_init,
                 writer,
-                initial_time_for_plot_ms=global_min_time_ms
+                initial_time_for_plot_ms=global_min_time_ms,
+                resolution=resolution
             )
             final_weights[syn_i] = w_final
             synapses_trajectories[syn_i] = trajectory
