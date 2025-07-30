@@ -54,7 +54,7 @@ def df_to_spikedict(df):
     )
 
         
-def sim_stdp_alpha_forced_pl(cfg):
+def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     """
     For each synapse n:
       - PRE-neuron: iaf_psc_alpha(high threshold), forced by spike_generator_in.
@@ -286,7 +286,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     # Save weight evolution to CSV
     #--------------------------------------------------------------------------
     df_w = pd.DataFrame(weight_records)
-    df_w.to_csv("simulated_synaptic_evolution.csv", index=False)
+    df_w.to_csv(prefix+"simulated_synaptic_evolution.csv", index=False)
     print("SIM: Saved synaptic weight evolution to 'simulated_synaptic_evolution.csv'")
 
     
@@ -300,7 +300,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         "senders": np.asarray(events_pre["senders"], dtype=int) - offset,
         "times":   np.around(events_pre["times"],decimals=int(np.log(1/resolution)))
     })
-    df_pre.to_csv(csv_file_pre, index=False)
+    df_pre.to_csv(prefix+csv_file_pre, index=False)
     print("SIM: Saved spikes of pre_neurons to", csv_file_pre)
 
     events_post = spike_rec_post.get("events")
@@ -309,7 +309,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         "senders": np.asarray(events_post["senders"], dtype=int) - offset,
         "times":   np.around(events_post["times"],decimals=int(np.log(1/resolution)))
     })
-    df_post.to_csv(csv_file_post, index=False)  
+    df_post.to_csv(prefix+csv_file_post, index=False)  
     print("SIM: Saved spikes of post_neurons to", csv_file_post)
 
     
@@ -344,7 +344,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     plt.title(f"SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
     
     if sim_plot_save:
-        plt.savefig("simulated_synaptic_evolution.png", dpi=150)
+        plt.savefig(prefix+"simulated_synaptic_evolution.png", dpi=150)
     print("SIM: Saved synaptic weight plot to 'simulated_synaptic_evolution.png'")
 
     
@@ -357,11 +357,11 @@ def sim_stdp_alpha_forced_pl(cfg):
 
     plot_raster(pre_dict, 0, tmin, tmax,
                 start_syn, end_syn, "SIM: PRE-neurons",
-                "simulated_presynneu_raster.png" if sim_plot_save else None)
+                prefix+"simulated_presynneu_raster.png" if sim_plot_save else None)
 
     plot_raster(post_dict, N, tmin, tmax,
                 start_syn, end_syn, "SIM: POST-neurons",
-                "simulated_postsynneu_raster.png" if sim_plot_save else None)
+                prefix+"simulated_postsynneu_raster.png" if sim_plot_save else None)
 
     
     #--------------------------------------------------------------------------
