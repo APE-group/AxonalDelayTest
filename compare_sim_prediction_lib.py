@@ -39,6 +39,7 @@ def compare_csv_files(csv_file_1, csv_file_2, threshold=1e-8):
         return False
 
     return_False = False
+    TotalMismatch = 0
     for i in range(len(df1)):
         syn_id_1 = df1.loc[i, 'syn_ID']
         syn_id_2 = df2.loc[i, 'syn_ID']
@@ -54,8 +55,10 @@ def compare_csv_files(csv_file_1, csv_file_2, threshold=1e-8):
             rel_diff = abs(val1 - val2)/denom
             if rel_diff > threshold:
                 print(f"Row {i}, syn_ID={syn_id_1}, col={col} mismatch: {val1} vs {val2}, rel_diff={rel_diff}")
+                TotalMismatch += 1
                 return_False = True
     if return_False:
+        print("Total number of mismatch: ", TotalMismatch)
         return False
 
     print(f"Files {csv_file_1} and {csv_file_2} match within threshold={threshold}.")
