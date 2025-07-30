@@ -20,15 +20,15 @@
 
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 
-random_seed: 123456
-Total_number_described_synapses_for_sim: 16 # total number of synapses described in this file
+described_syn: 16                         # total number of synapses described in this file
 add_rand_syn: 0
+random_seed: 123456
 max_rand_events_per_syn: 5
 
 axonal_support: True
 
 verbose_sim: False
-verbose_prediction_summary: True
+verbose_pred: False
 
 sim_plot_save: True
 prediction_plot_save: True
@@ -42,6 +42,7 @@ csv_file_post: 'spikes_post_neurons.csv'
 # Simulation parameters
 T_sim_ms: 180          # Total simulation time (ms)
 save_int_ms: 5       # Interval for saving synaptic weights (ms)
+resolution: 0.1        # NEST simulator resolution
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_synapse: 11
 #end_synapse: 13
@@ -113,11 +114,6 @@ spike_train_post_ms: [
 # Large static weights to ensure forced spiking
 forced_in_weight:  6000.0  # from spike_generator_in -> pre_neuron
 forced_out_weight: 6000.0  # from spike_generator_out -> post_neuron
-
-#plotting params
-plot_marker_ms: 50       #time interval of markers in plots
-
-plot_major_ticks_ms: 10
 
 plot_mm: False
 

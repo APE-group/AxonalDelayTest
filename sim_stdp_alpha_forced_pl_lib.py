@@ -93,7 +93,8 @@ def sim_stdp_alpha_forced_pl(cfg):
     else:
         delay             = cfg["dendritic_delay_ms"]
         axonal_delay      = cfg["axonal_delay_ms"]
-        spike_train_pre_ms= [np.array(spike_train_pre_ms[i])+axonal_delay[i] for i in range(len(axonal_delay))] 
+        spike_train_pre_ms= [np.array(spike_train_pre_ms[i])+axonal_delay[i] for i in range(len(axonal_delay))]
+        T_sim_ms          = T_sim_ms + 2*max(axonal_delay)
     
     W_init                = cfg["W_init"]
 
@@ -102,9 +103,6 @@ def sim_stdp_alpha_forced_pl(cfg):
     forced_in_weight      = cfg["forced_in_weight"]
     forced_out_weight     = cfg["forced_out_weight"]
 
-    plot_marker_ms        = cfg["plot_marker_ms"]
-    plot_major_ticks_ms   = cfg["plot_major_ticks_ms"]
-
     plot_mm               = cfg["plot_mm"]
 
     # Validate range
@@ -112,6 +110,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         raise ValueError("start_synapse and end_synapse must be integers.")
     if start_syn < 0 or end_syn >= N or start_syn > end_syn:
         raise ValueError(f"Invalid synapse range: start={start_syn}, end={end_syn}, must be in [0..{N-1}] and start<=end.")
+
     
     #--------------------------------------------------------------------------
     # Reset and configure NEST kernel
@@ -120,6 +119,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     nest.SetKernelStatus({"resolution": resolution})
     nest.set_verbosity('M_ERROR')
 
+    
     #--------------------------------------------------------------------------
     # Create or set stdp_pl_synapse_hom in NEST 3.7
     #--------------------------------------------------------------------------
@@ -128,6 +128,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     else:
         nest.CopyModel("stdp_pl_synapse_hom", "my_stdp_pl_hom", stdp_params)
 
+        
     #--------------------------------------------------------------------------
     # Build the PRE-neuron (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
@@ -140,6 +141,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         "V_reset": -70.0
     })
 
+    
     #--------------------------------------------------------------------------
     # Build the POST-neuron (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
@@ -151,6 +153,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         "E_L": -70.0,
         "V_reset": -70.0
     })
+
     
     #--------------------------------------------------------------------------
     # Create and connect spike generators to PRE- and POST-neurons
@@ -194,6 +197,7 @@ def sim_stdp_alpha_forced_pl(cfg):
             {"synapse_model": "static_synapse", "weight": forced_out_weight, "delay": 1.0}
         )
 
+        
     #--------------------------------------------------------------------------
     # Connect PRE-neuron -> POST-neuron with the custom "my_stdp_pl_hom" synapse
     #--------------------------------------------------------------------------
@@ -227,6 +231,8 @@ def sim_stdp_alpha_forced_pl(cfg):
         # Grab the connection handle for weight logging
         conn_obj = nest.GetConnections(pre_neurons[i], post_neurons[i])[0]
         connection_handles.append(conn_obj)
+
+        
     #--------------------------------------------------------------------------
     # Create and connect spike recorders for PRE- and POST-neurons
     #--------------------------------------------------------------------------
@@ -237,8 +243,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     nest.Connect(pre_neurons,  spike_rec_pre,  {"rule": "all_to_all"})
     nest.Connect(post_neurons, spike_rec_post, {"rule": "all_to_all"})
 
-
-    """
+    
     #--------------------------------------------------------------------------
     # Create and connect multimeters for PRE- and POST-neurons
     #--------------------------------------------------------------------------
@@ -256,8 +261,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     if n_mm_post > 0:
         mm_post = nest.Create('multimeter', n_mm_post, {'record_from': ["V_m"], 'interval': .1})
         [nest.Connect(mm_post[i], post_neurons[i]) for i in range (n_mm_post)]
-    """
-
+    
 
     #--------------------------------------------------------------------------
     # Simulation in steps, log weight changes
@@ -276,7 +280,8 @@ def sim_stdp_alpha_forced_pl(cfg):
             w_val = conn_obj.get("weight")
             record_now[f"w_{j}"] = w_val
         weight_records.append(record_now)
-        
+
+
     #--------------------------------------------------------------------------
     # Save weight evolution to CSV
     #--------------------------------------------------------------------------
@@ -284,10 +289,10 @@ def sim_stdp_alpha_forced_pl(cfg):
     df_w.to_csv("simulated_synaptic_evolution.csv", index=False)
     print("SIM: Saved synaptic weight evolution to 'simulated_synaptic_evolution.csv'")
 
+    
     #--------------------------------------------------------------------------
     # Retrieve and save spike data
     #--------------------------------------------------------------------------
-
     offset = 1
     events_pre = spike_rec_pre.get("events")
     df_pre = pd.DataFrame({
@@ -307,7 +312,7 @@ def sim_stdp_alpha_forced_pl(cfg):
     df_post.to_csv(csv_file_post, index=False)  
     print("SIM: Saved spikes of post_neurons to", csv_file_post)
 
-    """
+    
     #--------------------------------------------------------------------------
     # Retrieve multimeter data
     #--------------------------------------------------------------------------
@@ -315,7 +320,7 @@ def sim_stdp_alpha_forced_pl(cfg):
         res_pre = [nest.GetStatus(mm_pre[i], 'events')[0] for i in range(n_mm_pre)]
     if n_mm_post > 0:
         res_post = [nest.GetStatus(mm_post[i], 'events')[0] for i in range(n_mm_post)]
-    """
+    
 
     #--------------------------------------------------------------------------
     # Plot weight evolution with points
@@ -334,17 +339,15 @@ def sim_stdp_alpha_forced_pl(cfg):
 
     plt.legend()
     plt.xlim(0, T_sim_ms)
-    #plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    #plt.minorticks_on()
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
     plt.title(f"SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
     
-    plt.tight_layout()
     if sim_plot_save:
         plt.savefig("simulated_synaptic_evolution.png", dpi=150)
     print("SIM: Saved synaptic weight plot to 'simulated_synaptic_evolution.png'")
 
+    
     #--------------------------------------------------------------------------
     # Plot raster of PRE- and POST-neurons
     #--------------------------------------------------------------------------
@@ -360,7 +363,7 @@ def sim_stdp_alpha_forced_pl(cfg):
                 start_syn, end_syn, "SIM: POST-neurons",
                 "simulated_postsynneu_raster.png" if sim_plot_save else None)
 
-    """
+    
     #--------------------------------------------------------------------------
     # Plot membrane potentials
     #--------------------------------------------------------------------------
@@ -390,7 +393,7 @@ def sim_stdp_alpha_forced_pl(cfg):
                 if i==n_mm_post-1:
                     plt.title('SIM: POST-neurons')
             plt.xlabel('Time [ms]')
-    """
+    
     
     # ------------------------------------------------------------------
     # Pack minimal summary

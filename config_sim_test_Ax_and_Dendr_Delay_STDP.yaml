@@ -25,10 +25,10 @@ add_rand_syn: 1000
 random_seed: 123456
 max_rand_events_per_syn: 5
 
-axonal_support: True
+axonal_support: False
 
 verbose_sim: False
-verbose_prediction_summary: False
+verbose_pred: False
 
 sim_plot_save: False
 prediction_plot_save: False
@@ -41,7 +41,7 @@ csv_file_post: 'spikes_post_neurons.csv'
 
 # Simulation parameters
 T_sim_ms: 180          # Total simulation time (ms)
-save_int_ms: 5       # Interval for saving synaptic weights (ms)
+save_int_ms: 10        # Interval for saving synaptic weights (ms)
 resolution: 0.1        # NEST simulator resolution
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_syn: 4
@@ -80,11 +80,6 @@ spike_train_post_ms: []
 # Large static weights to ensure forced spiking
 forced_in_weight:  6000.0  # from spike_generator_in -> pre_neuron
 forced_out_weight: 6000.0  # from spike_generator_out -> post_neuron
-
-#plotting params
-plot_marker_ms: 50       #time interval of markers in plots
-
-plot_major_ticks_ms: 10
 
 plot_mm: False
 

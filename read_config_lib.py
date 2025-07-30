@@ -74,15 +74,12 @@ def read_config(name_without_path):
         cfg_pms["forced_in_weight"]      = cfg.get("forced_in_weight",  1000.0)
         cfg_pms["forced_out_weight"]     = cfg.get("forced_out_weight", 1000.0)
         
-        cfg_pms["plot_marker_ms"]        = cfg["plot_marker_ms"]
-        cfg_pms["plot_major_ticks_ms"]   = cfg["plot_major_ticks_ms"]
-        
         cfg_pms["plot_mm"]               = cfg["plot_mm"]
         cfg_pms["prediction_plot_save"]  = cfg["prediction_plot_save"]
 
         cfg_pms["csv_file_pre"]  = cfg["csv_file_pre"]
         cfg_pms["csv_file_post"] = cfg["csv_file_post"]
-        cfg_pms["verbose_pred"]  = cfg.get("verbose_prediction_summary", True)
+        cfg_pms["verbose_pred"]  = cfg.get("verbose_pred", True)
 
         cfg_pms["stdp_params"]  = cfg["stdp_params"]
 
