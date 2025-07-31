@@ -64,7 +64,7 @@ if __name__ == "__main__":
     print(f"Prediction summary saved to {output_pred_csv}.")
     
     # 4) Compare the two CSVs
-    match_ok = compare_csv_files(output_sim_csv, output_pred_csv, threshold=1e-8)
+    match_ok, _ = compare_csv_files(output_sim_csv, output_pred_csv, threshold=1e-8)
     if match_ok:
         print("Both CSV files match within threshold.")
     else:

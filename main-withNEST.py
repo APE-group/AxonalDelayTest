@@ -28,13 +28,11 @@ from sim_stdp_alpha_forced_pl_lib import sim_stdp_alpha_forced_pl
 from predict_stdp_alpha_forced_pl_lib import predict_stdp_alpha_forced_pl
 from compare_sim_prediction_lib import compare_csv_files
 from add_rand_events_lib import add_rand_events
+from dump_failed_tests_config import dump_failed_tests_config
     
     
 if __name__ == "__main__":
     config_pms = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
-    #config_pms = read_config("config_bug.yaml")
-    #config_pms = read_config("current_config.yaml")
-    #config_pms = read_config("config_deterministic.yaml")
     config_pms = add_rand_events(config_pms)
 
     with open('current_config.yaml', 'w') as file:
@@ -71,12 +69,13 @@ if __name__ == "__main__":
     print(f"Simulation summary saved to {output_noAxDsim_csv}.")
     
     # Compare the two CSVs
-    match_ok = compare_csv_files(output_AxDsim_csv, output_noAxDsim_csv, threshold=1e-8)
+    match_ok, failureList = compare_csv_files(output_AxDsim_csv, output_noAxDsim_csv, threshold=1e-8)
     if match_ok:
         print("Both CSV files match within threshold.")
     else:
         print("Mismatch found above threshold.")
         assert("MISMATCH DETECTED")
+        dump_failed_tests_config(config_pms,failureList)
 
     # Show all plots
     if plot_display:
