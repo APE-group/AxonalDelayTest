@@ -20,11 +20,41 @@
 
 import nest
 import numpy as np
-import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def sim_stdp_alpha_forced_pl(config_file):
+def get_syn_color(k):      # cycle through C0…C9
+    return f"C{k % 10}"
+
+def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
+    plt.figure()
+    plt.title(label)
+    plt.xlabel("Time (ms)")
+    plt.ylabel("Neuron ID")
+
+    for i in range(start_syn, end_syn+1):
+        times = spike_dict.get(i+offset, [])#[i]
+        plt.scatter(times, [i+offset]*len(times),
+                    color=get_syn_color(i), marker='.',label=f"Neu {i}")
+    plt.xlim(tmin, tmax)
+    plt.yticks(range(start_syn+offset, end_syn+offset+1))
+    plt.tight_layout()
+    if fname:
+        plt.savefig(fname)
+        
+def df_to_spikedict(df):
+    """
+    Convert a DataFrame with columns ['senders', 'times']
+    into a dict  {id: sorted list of times}.
+    """
+    return (
+        df.groupby("senders")["times"]
+          .apply(lambda s: sorted(s.tolist()))
+          .to_dict()
+    )
+
+        
+def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     """
     For each synapse n:
       - PRE-neuron: iaf_psc_alpha(high threshold), forced by spike_generator_in.
@@ -33,16 +63,10 @@ def sim_stdp_alpha_forced_pl(config_file):
       - Different spike trains are used for pre- and post-neurons.
       - We record spikes (pre & post), the evolving weight and the membrane potentials.
     """
-
-    #--------------------------------------------------------------------------
-    # Read YAML config
-    #--------------------------------------------------------------------------
-    with open(config_file, 'r') as f:
-        cfg = yaml.safe_load(f)
-
+    
     axonal_support        = cfg["axonal_support"]
         
-    verbose               = cfg["verbose_sim"]
+    verbose_sim           = cfg["verbose_sim"]
     sim_plot_save         = cfg["sim_plot_save"]
     plot_display          = cfg["plot_display"]
 
@@ -51,46 +75,51 @@ def sim_stdp_alpha_forced_pl(config_file):
     
     T_sim_ms              = cfg["T_sim_ms"]
     save_int_ms           = cfg["save_int_ms"]
-    N                     = cfg["Total_number_described_synapses_for_sim"]
+    resolution            = cfg["resolution"]
+    N                     = cfg["N"]
 
-    # If user doesn't specify, default to [1..N]
-    start_syn             = cfg.get("start_synapse", 1)
-    end_syn               = cfg.get("end_synapse", N)
+    # If user doesn't specify, default to [0..N-1]
+    start_syn             = cfg["start_syn"]
+    end_syn               = cfg["end_syn"]
     
     spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
     spike_train_post_ms   = cfg["spike_train_post_ms"]  
 
     axonal_support        = cfg["axonal_support"]
+    
     if axonal_support:
         dendritic_delay   = cfg["dendritic_delay_ms"]
         axonal_delay      = cfg["axonal_delay_ms"]
     else:
         delay             = cfg["dendritic_delay_ms"]
+        axonal_delay      = cfg["axonal_delay_ms"]
+        spike_train_pre_ms= [np.array(spike_train_pre_ms[i])+axonal_delay[i] for i in range(len(axonal_delay))]
+        T_sim_ms          = T_sim_ms + 2*max(axonal_delay)
+    
     W_init                = cfg["W_init"]
 
-    stdp_params           = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
-                                                    "alpha": 0.11, "mu": 0.4})
-    forced_in_weight      = cfg.get("forced_in_weight",  1000.0)
-    forced_out_weight     = cfg.get("forced_out_weight", 1000.0)
+    stdp_params           = cfg["stdp_params"]
 
-    plot_marker_ms        = cfg["plot_marker_ms"]
-    plot_major_ticks_ms   = cfg["plot_major_ticks_ms"]
+    forced_in_weight      = cfg["forced_in_weight"]
+    forced_out_weight     = cfg["forced_out_weight"]
 
     plot_mm               = cfg["plot_mm"]
 
     # Validate range
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
         raise ValueError("start_synapse and end_synapse must be integers.")
-    if start_syn < 1 or end_syn > N or start_syn > end_syn:
-        raise ValueError(f"Invalid synapse range: start={start_syn}, end={end_syn}, must be in [1..{N}] and start<=end.")
+    if start_syn < 0 or end_syn >= N or start_syn > end_syn:
+        raise ValueError(f"Invalid synapse range: start={start_syn}, end={end_syn}, must be in [0..{N-1}] and start<=end.")
+
     
     #--------------------------------------------------------------------------
     # Reset and configure NEST kernel
     #--------------------------------------------------------------------------
     nest.ResetKernel()
-    nest.SetKernelStatus({"resolution": 0.1})
+    nest.SetKernelStatus({"resolution": resolution})
     nest.set_verbosity('M_ERROR')
 
+    
     #--------------------------------------------------------------------------
     # Create or set stdp_pl_synapse_hom in NEST 3.7
     #--------------------------------------------------------------------------
@@ -99,11 +128,12 @@ def sim_stdp_alpha_forced_pl(config_file):
     else:
         nest.CopyModel("stdp_pl_synapse_hom", "my_stdp_pl_hom", stdp_params)
 
+        
     #--------------------------------------------------------------------------
     # Build the PRE-neuron (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
     #--------------------------------------------------------------------------
-    if verbose: print(" Build the PRE-neuron ------------------")
+    if verbose_sim: print(" Build the PRE-neuron ------------------")
     pre_neurons = nest.Create("iaf_psc_alpha", N)
     nest.SetStatus(pre_neurons, {
         "V_th": -10.0,   # artificially high
@@ -111,28 +141,30 @@ def sim_stdp_alpha_forced_pl(config_file):
         "V_reset": -70.0
     })
 
+    
     #--------------------------------------------------------------------------
     # Build the POST-neuron (iaf_psc_alpha) with high threshold
     #    so it won't spike unless forced by the output generator
     #--------------------------------------------------------------------------
-    if verbose: print(" Build the POST-neuron ------------------")
+    if verbose_sim: print(" Build the POST-neuron ------------------")
     post_neurons = nest.Create("iaf_psc_alpha", N)
     nest.SetStatus(post_neurons, {
         "V_th": -10.0,   # artificially high
         "E_L": -70.0,
         "V_reset": -70.0
     })
+
     
     #--------------------------------------------------------------------------
     # Create and connect spike generators to PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    if verbose: print(" Create and connect spike generators ------------------")
+    if verbose_sim: print(" Create and connect spike generators ------------------")
 
     spike_generators_in = []
     
     #loop over N synapses
     for i in range(N):
-
+        if verbose_sim: print("spike_train_pre_ms[",i,"]:",spike_train_pre_ms[i])
         sg_in = nest.Create("spike_generator", params={
             "spike_times": spike_train_pre_ms[i]
         })
@@ -150,7 +182,7 @@ def sim_stdp_alpha_forced_pl(config_file):
 
     #loop over N synapses
     for i in range(N):
-
+        if verbose_sim: print("spike_train_post_ms[",i,"]:",spike_train_post_ms[i])
         sg_out = nest.Create("spike_generator", params={
             "spike_times": spike_train_post_ms[i]
         })
@@ -165,13 +197,15 @@ def sim_stdp_alpha_forced_pl(config_file):
             {"synapse_model": "static_synapse", "weight": forced_out_weight, "delay": 1.0}
         )
 
+        
     #--------------------------------------------------------------------------
     # Connect PRE-neuron -> POST-neuron with the custom "my_stdp_pl_hom" synapse
     #--------------------------------------------------------------------------
-    if verbose: print("Connect pre_neuron -> post_neuron ------------------")
+    if verbose_sim: print("Connect pre_neuron -> post_neuron ------------------")
     connection_handles = []
     for i in range(N):
         if axonal_support:
+            if verbose_sim: print("syn number:",i,"ad:",axonal_delay[i],"dd:",dendritic_delay[i],"W:",W_init[i])
             nest.Connect(
                 pre_neurons[i],
                 post_neurons[i],
@@ -197,20 +231,23 @@ def sim_stdp_alpha_forced_pl(config_file):
         # Grab the connection handle for weight logging
         conn_obj = nest.GetConnections(pre_neurons[i], post_neurons[i])[0]
         connection_handles.append(conn_obj)
+
+        
     #--------------------------------------------------------------------------
     # Create and connect spike recorders for PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    if verbose: print("Create and connect spike recorders  ------------------")
+    if verbose_sim: print("Create and connect spike recorders  ------------------")
     spike_rec_pre  = nest.Create("spike_recorder")
     spike_rec_post = nest.Create("spike_recorder")
 
     nest.Connect(pre_neurons,  spike_rec_pre,  {"rule": "all_to_all"})
     nest.Connect(post_neurons, spike_rec_post, {"rule": "all_to_all"})
 
+    
     #--------------------------------------------------------------------------
     # Create and connect multimeters for PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    if verbose: print("Create and connect multimeters  ------------------")
+    if verbose_sim: print("Create and connect multimeters  ------------------")
 
     mm_pre = list(range(start_syn-1, end_syn))
     mm_post = list(range(start_syn-1, end_syn))
@@ -224,11 +261,12 @@ def sim_stdp_alpha_forced_pl(config_file):
     if n_mm_post > 0:
         mm_post = nest.Create('multimeter', n_mm_post, {'record_from': ["V_m"], 'interval': .1})
         [nest.Connect(mm_post[i], post_neurons[i]) for i in range (n_mm_post)]
+    
 
     #--------------------------------------------------------------------------
     # Simulation in steps, log weight changes
     #--------------------------------------------------------------------------
-    if verbose: print("Simulate in steps  ------------------")
+    if verbose_sim: print("Simulate in steps  ------------------")
     current_time = 0.0
     weight_records = []
 
@@ -242,33 +280,39 @@ def sim_stdp_alpha_forced_pl(config_file):
             w_val = conn_obj.get("weight")
             record_now[f"w_{j}"] = w_val
         weight_records.append(record_now)
-        
+
+
     #--------------------------------------------------------------------------
     # Save weight evolution to CSV
     #--------------------------------------------------------------------------
     df_w = pd.DataFrame(weight_records)
-    df_w.to_csv("weights_alpha_forced_pl.csv", index=False)
-    print("Saved synaptic weight evolution to 'weights_alpha_forced_pl.csv'")
+    df_w.to_csv(prefix+"simulated_synaptic_evolution.csv", index=False)
+    print("SIM: Saved synaptic weight evolution to 'simulated_synaptic_evolution.csv'")
 
+    
     #--------------------------------------------------------------------------
     # Retrieve and save spike data
     #--------------------------------------------------------------------------
+    offset = 1
     events_pre = spike_rec_pre.get("events")
     df_pre = pd.DataFrame({
-        "senders": events_pre["senders"],
-        "times":   events_pre["times"]
+        #"senders": events_pre["senders"],
+        "senders": np.asarray(events_pre["senders"], dtype=int) - offset,
+        "times":   np.around(events_pre["times"],decimals=int(np.log(1/resolution)))
     })
-    df_pre.to_csv(csv_file_pre, index=False)
-    print("Saved spikes of pre_neurons to", csv_file_pre)
+    df_pre.to_csv(prefix+csv_file_pre, index=False)
+    print("SIM: Saved spikes of pre_neurons to", csv_file_pre)
 
     events_post = spike_rec_post.get("events")
     df_post = pd.DataFrame({
-        "senders": events_post["senders"],
-        "times":   events_post["times"]
+        #"senders": events_post["senders"],
+        "senders": np.asarray(events_post["senders"], dtype=int) - offset,
+        "times":   np.around(events_post["times"],decimals=int(np.log(1/resolution)))
     })
-    df_post.to_csv(csv_file_post, index=False)
-    print("Saved spikes of post_neurons to", csv_file_post)
+    df_post.to_csv(prefix+csv_file_post, index=False)  
+    print("SIM: Saved spikes of post_neurons to", csv_file_post)
 
+    
     #--------------------------------------------------------------------------
     # Retrieve multimeter data
     #--------------------------------------------------------------------------
@@ -276,12 +320,12 @@ def sim_stdp_alpha_forced_pl(config_file):
         res_pre = [nest.GetStatus(mm_pre[i], 'events')[0] for i in range(n_mm_pre)]
     if n_mm_post > 0:
         res_post = [nest.GetStatus(mm_post[i], 'events')[0] for i in range(n_mm_post)]
-
+    
 
     #--------------------------------------------------------------------------
     # Plot weight evolution with points
     #--------------------------------------------------------------------------
-    plt.figure(figsize=(8, 6))
+    plt.figure()
     for i in range(N):
         # Plot each weight as markers (no connecting lines)
         plt.plot(
@@ -295,43 +339,31 @@ def sim_stdp_alpha_forced_pl(config_file):
 
     plt.legend()
     plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
-    plt.title("STDP with stdp_pl_synapse_hom (iaf_psc_alpha) - Forced Pre & Post Spikes")
-
-    plt.tight_layout()
+    plt.title(f"SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
+    
     if sim_plot_save:
-        plt.savefig("sim_weights_alpha_forced_pl.png", dpi=150)
-    print("Saved synaptic weight plot to 'weights_alpha_forced_pl.png'")
+        plt.savefig(prefix+"simulated_synaptic_evolution.png", dpi=150)
+    print("SIM: Saved synaptic weight plot to 'simulated_synaptic_evolution.png'")
 
+    
     #--------------------------------------------------------------------------
     # Plot raster of PRE- and POST-neurons
     #--------------------------------------------------------------------------
-    plt.figure(figsize=(8, 6))
-    plt.subplot(211)
-    plt.scatter(df_pre["times"], df_pre["senders"], s=5, c='tab:blue')
-    plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
-    plt.ylabel('PRE-neuron IDs')
-    plt.title('Raster: PRE (iaf_psc_alpha)')
+    pre_dict  = df_to_spikedict(df_pre)
+    post_dict = df_to_spikedict(df_post)
+    tmin, tmax = 0, T_sim_ms                    
 
-    plt.subplot(212)
-    plt.scatter(df_post["times"], df_post["senders"], s=5, c='tab:red')
-    plt.xlim(0, T_sim_ms)
-    plt.xticks(np.arange(0, T_sim_ms + 1, plot_major_ticks_ms))
-    plt.minorticks_on()
-    plt.xlabel('Time (ms)')
-    plt.ylabel('POST-neuron IDs')
-    plt.title('Raster: POST (iaf_psc_alpha)')
+    plot_raster(pre_dict, 0, tmin, tmax,
+                start_syn, end_syn, "SIM: PRE-neurons",
+                prefix+"simulated_presynneu_raster.png" if sim_plot_save else None)
 
-    plt.tight_layout()
-    if sim_plot_save:
-        plt.savefig("sim_raster_alpha_forced_pl.png", dpi=150)
-    print("Saved spike raster to 'raster_alpha_forced_pl.png'")
+    plot_raster(post_dict, N, tmin, tmax,
+                start_syn, end_syn, "SIM: POST-neurons",
+                prefix+"simulated_postsynneu_raster.png" if sim_plot_save else None)
 
+    
     #--------------------------------------------------------------------------
     # Plot membrane potentials
     #--------------------------------------------------------------------------
@@ -346,7 +378,7 @@ def sim_stdp_alpha_forced_pl(config_file):
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
                 if i==n_mm_pre-1:
-                    plt.title('PRE-neurons')
+                    plt.title('SIM: PRE-neurons')
             plt.xlabel('Time [ms]')
     
         if n_mm_post > 0:
@@ -359,17 +391,17 @@ def sim_stdp_alpha_forced_pl(config_file):
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
                 if i==n_mm_post-1:
-                    plt.title('POST-neurons')
+                    plt.title('SIM: POST-neurons')
             plt.xlabel('Time [ms]')
-
     
-    sim_summary = {}
     
-    for syn_i in range(start_syn, end_syn+1):
-           sim_summary[syn_i] = {
-            "syn_ID": syn_i,
-               "start_syn_value": df_w[f"w_{syn_i-1}"].loc[0],
-            "final_syn_value": df_w[f"w_{syn_i-1}"].loc[len(df_w)-1]
-           }
-
+    # ------------------------------------------------------------------
+    # Pack minimal summary
+    # ------------------------------------------------------------------
+    sim_summary = {
+        i: {"syn_ID": i,
+            "start_syn_value": W_init[i],#df_w[f"w_{i}"].iloc[0],
+            "final_syn_value": df_w[f"w_{i}"].iloc[-1]}
+        for i in range(start_syn, end_syn+1)
+    }
     return df_w, sim_summary, plot_display

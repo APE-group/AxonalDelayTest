@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import yaml
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -41,14 +40,14 @@ def load_spikes_pre(csv_file, N):
     """
     Reads a CSV file for pre-synaptic spikes with columns:
       senders, times
-    Pre neurons: 1..N
+    Pre neurons: 0..N-1
 
     Returns:
       pre_spikes_dict : { i: list of float spike_time_ms }
       all_spike_times_ms : global list of times
       all_neuron_ids : global list of IDs
     """
-    pre_spikes_dict = {i: [] for i in range(1, N+1)}
+    pre_spikes_dict = {i: [] for i in range(N)}
     all_spike_times_ms = []
     all_neuron_ids = []
 
@@ -57,15 +56,15 @@ def load_spikes_pre(csv_file, N):
         for row in reader:
             neuron_id = int(row["senders"])
             spike_time_ms = float(row["times"])
-            if not (1 <= neuron_id <= N):
-                raise ValueError(f"Pre neuron_id {neuron_id} out of range 1..{N}")
+            if not (0 <= neuron_id < N):
+                raise ValueError(f"Pre neuron_id {neuron_id} out of range 0..{N-1}")
 
             pre_spikes_dict[neuron_id].append(spike_time_ms)
             all_spike_times_ms.append(spike_time_ms)
             all_neuron_ids.append(neuron_id)
 
     # Sort times
-    for i in range(1, N+1):
+    for i in range(N):
         pre_spikes_dict[i].sort()
 
     return pre_spikes_dict, all_spike_times_ms, all_neuron_ids
@@ -75,7 +74,7 @@ def load_spikes_post(csv_file, N):
     """
     Reads a CSV file for post-synaptic spikes with columns:
       senders, times
-    Post neurons: N+1..2N
+    Post neurons: N..2N-1
 
     Returns:
       post_spikes_dict : { i: list of float spike_time_ms } 
@@ -83,7 +82,7 @@ def load_spikes_post(csv_file, N):
       all_spike_times_ms : global list of times
       all_neuron_ids : global list of IDs
     """
-    post_spikes_dict = {i: [] for i in range(1, N+1)}
+    post_spikes_dict = {i: [] for i in range(N)}
     all_spike_times_ms = []
     all_neuron_ids = []
 
@@ -92,8 +91,8 @@ def load_spikes_post(csv_file, N):
         for row in reader:
             neuron_id = int(row["senders"])
             spike_time_ms = float(row["times"])
-            if not (N+1 <= neuron_id <= 2*N):
-                raise ValueError(f"Post neuron_id {neuron_id} out of range {N+1}..{2*N}")
+            if not (N <= neuron_id < 2*N):
+                raise ValueError(f"Post neuron_id {neuron_id} out of range {N}..{2*N-1}")
 
             i = neuron_id - N
             post_spikes_dict[i].append(spike_time_ms)
@@ -102,7 +101,7 @@ def load_spikes_post(csv_file, N):
             all_neuron_ids.append(neuron_id)
 
     # Sort times
-    for i in range(1, N+1):
+    for i in range(N):
         post_spikes_dict[i].sort()
 
     return post_spikes_dict, all_spike_times_ms, all_neuron_ids
@@ -119,7 +118,8 @@ def stdp_pl_synapse_hom_causal(
     tau_plus_ms, lambda_pmt, alpha, mu, w_0,
     w_init,
     writer,
-    initial_time_for_plot_ms
+    initial_time_for_plot_ms,
+    resolution
 ):
     """
     Lumpsum version of stdp_pl_synapse_hom for both LTD(dt<0) and LTP(dt>0).
@@ -151,7 +151,7 @@ def stdp_pl_synapse_hom_causal(
 
     # 2) "Fake" initial row => no real spikes yet
     writer.writerow([syn_id, 0, None, None, None, None, None, 0.0, w])
-    trajectory.append((None, None, None, None, 0.0, 0.0, 0.0, w))
+    trajectory.append((syn_id, 0, None, None, None, None, 0.0, 0.0, 0.0, w))
 
     # 3) Build global event list
     #   For each pre index => pre_t_raw, pre_t_arr
@@ -161,7 +161,7 @@ def stdp_pl_synapse_hom_causal(
         pre_t_arr = pre_times_arr[i_pre]
         for j_post, post_t_raw in enumerate(post_times_raw):
             post_t_arr = post_times_arr[j_post]
-            dt_ms = post_t_arr - pre_t_arr
+            dt_ms = np.around(post_t_arr - pre_t_arr,decimals=int(np.log(1/resolution)))
 
             # event_time for lumpsum grouping:
             #  LTP => post arrival => lumpsum if (dt>0, same post_arr, same j_post)
@@ -183,7 +183,7 @@ def stdp_pl_synapse_hom_causal(
                 pre_t_arr,
                 post_t_arr
             ))
-
+    
     # 4) Sort by event_time ascending
     all_events.sort(key=lambda x: x[0])
 
@@ -197,12 +197,12 @@ def stdp_pl_synapse_hom_causal(
          pre_t_raw, post_t_raw,
          pre_t_arr, post_t_arr) = all_events[i]
 
-        if dt_ms == 0:
+        if np.abs(dt_ms) < 1e-10:
             # skip or handle corner case
             i += 1
             continue
 
-        if dt_ms > 0:
+        elif dt_ms > 0:
             # LTP lumpsum => group all consecutive events with the same (post_t_arr, j_post)
             w_before = w
             lumpsum = 0.0
@@ -235,6 +235,7 @@ def stdp_pl_synapse_hom_causal(
                     None        # partial => no real update
                 ])
                 trajectory.append((
+                    syn_id, event_idx,
                     pr2_raw, po2_raw,
                     pr2_arr, po2_arr,
                     dt2,
@@ -257,6 +258,7 @@ def stdp_pl_synapse_hom_causal(
                 w_after_lumpsum
             ])
             trajectory.append((
+                syn_id, event_idx,
                 pre_t_raw, None,
                 pre_t_arr, None,
                 lumpsum_dt,
@@ -300,6 +302,7 @@ def stdp_pl_synapse_hom_causal(
                     None
                 ])
                 trajectory.append((
+                    syn_id, event_idx,
                     pr2_raw, po2_raw,
                     pr2_arr, po2_arr,
                     dt2,
@@ -322,6 +325,7 @@ def stdp_pl_synapse_hom_causal(
                 w_after_lumpsum
             ])
             trajectory.append((
+                syn_id, event_idx,
                 pre_t_raw, None,
                 pre_t_arr, None,
                 lumpsum_dt,
@@ -341,7 +345,7 @@ def stdp_pl_synapse_hom_causal(
 ###############################################################################
 
 def get_synapse_color(syn_id):
-    return f"C{syn_id - 1}"
+    return f"C{syn_id % 10}"
 
 def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
                             start_syn, end_syn, prediction_plot_save):
@@ -365,7 +369,7 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
         weights  = []
 
         for evt in trajectory:
-            (pre_s, post_s, pre_a, post_a, dt_ms, wB, dW, wA) = evt
+            (syn_id, event_id, pre_s, post_s, pre_a, post_a, dt_ms, wB, dW, wA) = evt
             if pre_s is None and post_s is None:
                 # the "fake" row => place it at time_min
                 times_ms.append(time_min_ms)
@@ -385,12 +389,11 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
         color = get_synapse_color(syn_id)
         plt.plot(times_ms, weights, label=f"Syn {syn_id}", color=color, marker='o')
 
-    plt.title(f"Synaptic Evolution, synapses {start_syn}..{end_syn}")
+    plt.title(f"PRED: Synaptic evolution (Syn {start_syn}…{end_syn})")
     plt.xlabel("Time (ms)")
-    plt.ylabel("Weight")
+    plt.ylabel("Synaptic Weight")
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
-    # no plt.show() here, user does it in main script
     if prediction_plot_save:
         plt.savefig("predicted_synaptic_evolution.png")
 
@@ -401,7 +404,7 @@ def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
     We'll set integer y-ticks from start_syn..end_syn only.
     """
     plt.figure()
-    plt.title(f"Raster Plot: Pre-Synaptic Neurons {start_syn}..{end_syn} (ms)")
+    plt.title(f"PRED: Raster Pre-Syn Neus {start_syn}..{end_syn} (ms)")
     plt.xlabel("Time (ms)")
     plt.ylabel("Neuron ID (Pre)")
 
@@ -425,7 +428,7 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
     We'll set integer y-ticks from (start_syn+N)..(end_syn+N).
     """
     plt.figure()
-    plt.title(f"Raster Plot: Post-Synaptic Neurons {start_syn}..{end_syn} (ms)")
+    plt.title(f"PRED: Raster Post-Syn Neus {start_syn}..{end_syn} (ms)")
     plt.xlabel("Time (ms)")
     plt.ylabel("Neuron ID (Post)")
 
@@ -443,11 +446,27 @@ def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
         plt.savefig("predicted_postsyn_rastegram.png")
     # no plt.show()
 
+def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
+    plt.figure()
+    plt.title(label)
+    plt.xlabel("Time (ms)")
+    plt.ylabel("Neuron ID")
+    
+    for i in range(start_syn, end_syn+1):
+        times = spike_dict[i]
+        plt.scatter(times, [i+offset]*len(times),
+                    color=get_synapse_color(i), marker='.')
+    plt.xlim(tmin, tmax)
+    plt.yticks(range(start_syn+offset, end_syn+offset+1))
+    plt.tight_layout()
+    if fname:
+        plt.savefig(fname)
+    
 ###############################################################################
 # Main
 ###############################################################################
 
-def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
+def predict_stdp_alpha_forced_pl(config):
     """
     1) Read config,
     2) Load spikes,
@@ -458,54 +477,54 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
     7) Return minimal "analysis_summary" for the user => {syn_i: {"syn_ID", "start_syn_value", "final_syn_value"}} 
     No plt.show() calls here.
     """
-    import yaml
-    with open(config_check_stdp_filename, "r") as f:
-        config = yaml.safe_load(f)
+    verbose_pred         = config["verbose_pred"]
+    tau_plus_ms          = config["stdp_params"]["tau_plus"]
+    lambda_pmt           = config["stdp_params"]["lambda"]
+    alpha                = config["stdp_params"]["alpha"]
+    mu                   = config["stdp_params"]["mu"]
+    w_0                  = config["w_0"]
+    start_syn            = config["start_syn"]
+    end_syn              = config["end_syn"]
+    N                    = config["N"]
+    csv_file_pre         = config["csv_file_pre"]
+    csv_file_post        = config["csv_file_post"]
+    prediction_plot_save = config["prediction_plot_save"]
+    T_sim_ms             = config["T_sim_ms"]
+    resolution           = config["resolution"]
 
-    prediction_plot_save         = config["prediction_plot_save"]
-
-    N             = config["Total_number_described_synapses_for_sim"]
-    csv_file_pre  = config["csv_file_pre"]
-    csv_file_post = config["csv_file_post"]
-    start_syn     = config.get("start_synapse", 1)
-    end_syn       = config.get("end_synapse", N)
-    verbose_pred  = config.get("verbose_prediction_summary", True)
-
+    axonal_support       = config["axonal_support"]
+    init_weights_list    = config["W_init"]
+    
+    if axonal_support:
+        axonal_delays_list    = config["axonal_delay_ms"]
+        dendritic_delays_list = config["dendritic_delay_ms"]
+    else:
+        axonal_delays_list    = [0.0] * len(config["axonal_delay_ms"])
+        dendritic_delays_list = config["dendritic_delay_ms"]
+   
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
         raise ValueError("start_synapse and end_synapse must be integers.")
-    if start_syn < 1 or end_syn > N or start_syn > end_syn:
-        raise ValueError(f"Invalid syn range: {start_syn}..{end_syn}, must be in [1..{N}]")
 
-    stdp_params  = config["stdp_params"]
-    tau_plus_ms  = stdp_params["tau_plus"]
-    lambda_pmt   = stdp_params["lambda"]
-    alpha        = stdp_params["alpha"]
-    mu           = stdp_params["mu"]
-    w_0          = config["w_0"]
-
-    init_weights_list     = config.get("W_init", None)
-    axonal_delays_list    = config.get("axonal_delay_ms", None)
-    dendritic_delays_list = config.get("dendritic_delay_ms", None)
-    if init_weights_list is None or len(init_weights_list) != N:
-        raise ValueError("W_init must be list of length N.")
+    if not (0 <= start_syn <= end_syn < N):    
+        raise ValueError(f"Invalid syn range: {start_syn}..{end_syn}, must be in [0..{N-1}]")
 
     axon_default  = 5.0
     dend_default  = 0.1
 
     pre_spikes_dict, pre_all_times, _ = load_spikes_pre(csv_file_pre, N)
-    post_spikes_dict, post_all_times,_= load_spikes_post(csv_file_post, N)
+    post_spikes_dict, post_all_times, _ = load_spikes_post(csv_file_post, N)
 
     arrived_pre_dict  = {}
     arrived_post_dict = {}
-    for i in range(1, N+1):
-        axon_d  = float( safe_get_list_item(axonal_delays_list, i-1, axon_default) )
-        dend_d  = float( safe_get_list_item(dendritic_delays_list, i-1, dend_default) )
+    for i in range(N):
+        axon_d  = float( safe_get_list_item(axonal_delays_list, i, axon_default) )
+        dend_d  = float( safe_get_list_item(dendritic_delays_list, i, dend_default) )
 
-        arrived_pre_dict[i]  = [t + axon_d  for t in pre_spikes_dict[i]]
-        arrived_post_dict[i] = [t + dend_d  for t in post_spikes_dict[i]]
+        arrived_pre_dict[i]  = np.around([t + axon_d  for t in pre_spikes_dict[i]],decimals=int(np.log(1/resolution)))
+        arrived_post_dict[i] = np.around([t + dend_d  for t in post_spikes_dict[i]],decimals=int(np.log(1/resolution)))
 
-    all_arr_pre  = [t for i in range(1,N+1) for t in arrived_pre_dict[i]]
-    all_arr_post = [t for i in range(1,N+1) for t in arrived_post_dict[i]]
+    all_arr_pre  = [t for i in range(N) for t in arrived_pre_dict[i]]
+    all_arr_post = [t for i in range(N) for t in arrived_post_dict[i]]
     arrived_all  = all_arr_pre + all_arr_post
     if len(arrived_all)==0:
         global_min_time_ms = 0.0
@@ -517,7 +536,7 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
     final_weights         = [0.0]*N
     synapses_trajectories = {}
 
-    summary_file = "stdp_evolution_line_summary.csv"
+    summary_file = "predicted_synaptic_evolution.csv"
     with open(summary_file, "w", newline="") as f_out:
         writer = csv.writer(f_out)
         writer.writerow([
@@ -530,8 +549,8 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
             "w_after"
         ])
 
-        for syn_i in range(1, N+1):
-            w_init = init_weights_list[syn_i-1]
+        for syn_i in range(N):
+            w_init = init_weights_list[syn_i]
             w_final, trajectory = stdp_pl_synapse_hom_causal(
                 syn_i,
                 pre_spikes_dict, post_spikes_dict,
@@ -539,9 +558,10 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
                 tau_plus_ms, lambda_pmt, alpha, mu, w_0,
                 w_init,
                 writer,
-                initial_time_for_plot_ms=global_min_time_ms
+                initial_time_for_plot_ms=global_min_time_ms,
+                resolution=resolution
             )
-            final_weights[syn_i-1] = w_final
+            final_weights[syn_i] = w_final
             synapses_trajectories[syn_i] = trajectory
 
     print(f"Lumpsum STDP summary logged to {summary_file}")
@@ -549,12 +569,12 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
     print(f"FINAL DIAGNOSTIC for synapses {start_syn}..{end_syn}")
 
     analysis_summary = {}
-    for syn_i in range(1, N+1):
+    for syn_i in range(N):
         if syn_i<start_syn or syn_i>end_syn: 
             continue
 
-        w_init  = init_weights_list[syn_i-1]
-        w_final = final_weights[syn_i-1]
+        w_init  = init_weights_list[syn_i]
+        w_final = final_weights[syn_i]
         analysis_summary[syn_i] = {
             "syn_ID": syn_i,
             "start_syn_value": w_init,
@@ -572,28 +592,37 @@ def predict_stdp_alpha_forced_pl(config_check_stdp_filename):
                 for evt in track:
                     if evt[0] is None and evt[1] is None:
                         wA= evt[-1]
-                        line_e= f"(NoSpikes, dt_ms=0.000, dW=0.000, W={wA:.3f})"
+                        line_e= f"(NoSpikes, dt_ms=0.000, dW=0.000, W={wA:.3f})\n"
                     else:
-                        (p_s, po_s, p_a, po_a, dt_m, wB, dW, wA)= evt
+                        (syn_id, event_id, p_s, po_s, p_a, po_a, dt_m, wB, dW, wA)= evt
                         wA_str= f"{wA:.5f}" if wA is not None else "None"
                         line_e=(
-                            f"(pre_spike_ms={p_s}, post_spike_ms={po_s}, pre_arr_ms={p_a}, post_arr_ms={po_a}, "
-                            f"dt_ms={dt_m:.3f}, w_before={wB:.3f}, dW={dW:.3f}, w_after={wA_str})"
+                            f"(event_id={event_id}, pre_spike_ms={p_s}, post_spike_ms={po_s}, pre_arr_ms={p_a}, post_arr_ms={po_a}, "
+                            f"dt_ms={dt_m:.3f},\n w_before={wB:.3f}, dW={dW:.3f}, w_after={wA_str})\n"
                         )
                     event_lines.append(line_e)
                 all_event_str= " ".join(event_lines)
-                print(f"Syn {syn_i}: #changes={changes}, init={w_init:.4f}, final={w_final:.4f} => {all_event_str}")
+                print(f"Syn {syn_i}: #changes={changes}, init={w_init:.4f}, final={w_final:.4f} => \n {all_event_str}")
             else:
                 print(f"Syn {syn_i}: #changes={changes}, init={w_init:.4f}, final={w_final:.4f} => No step-by-step data")
 
     print("--------------------------------------------------")
 
     # Plot
-    plot_pre_raster(arrived_pre_dict,   N, global_min_time_ms, global_max_time_ms,
-                    start_syn, end_syn, prediction_plot_save)
-    plot_post_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms,
-                     start_syn, end_syn, prediction_plot_save)
+    global_min_time_ms, global_max_time_ms = 0, T_sim_ms
+    plot_raster(pre_spikes_dict, 0, global_min_time_ms, global_max_time_ms,
+                start_syn, end_syn, "PRED: PRE-neurons", 
+                "predicted_presynneu_raster.png" if prediction_plot_save else None)
+    plot_raster(post_spikes_dict, N, global_min_time_ms, global_max_time_ms,
+                     start_syn, end_syn, "PRED: POST-neurons", 
+                "predicted_postsynneu_raster.png" if prediction_plot_save else None)
     plot_synaptic_evolution(synapses_trajectories, global_min_time_ms, global_max_time_ms,
                             start_syn, end_syn, prediction_plot_save)
+    plot_raster(arrived_pre_dict, 0, global_min_time_ms, global_max_time_ms,
+                start_syn, end_syn, "PRED: PRE-syn event arrival time", 
+                "predicted_presynevent_raster.png" if prediction_plot_save else None)
+    plot_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms,
+                     start_syn, end_syn, "PRED: POST-syn event arrival time", 
+                "predicted_postsynevent_raster.png" if prediction_plot_save else None)
 
     return analysis_summary
