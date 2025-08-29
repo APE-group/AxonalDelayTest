@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 #  compare_sim_prediction_lib.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
@@ -60,9 +62,10 @@ def compare_csv_files(csv_file_1, csv_file_2, threshold=1e-8):
                 returnFalse = True
                 failureList.append(i)
     if returnFalse:
-        print("Total number of mismatch: ", totalMismatch)
+        print(f"Files {csv_file_1} and {csv_file_2} mismatch")
+        print("Total number of mismatches: ", totalMismatch)
         print("Failure list:", failureList)
         return False, failureList
 
-    print(f"Files {csv_file_1} and {csv_file_2} match within threshold={threshold}.")
+    print(f"Files {csv_file_1} and {csv_file_2} match within threshold={threshold}")
     return True, failureList

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 #  read_config_lib.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
@@ -32,8 +34,6 @@ def read_config(name_without_path):
         cfg_pms["add_rand_syn"] = int(cfg.get("add_rand_syn", 0))
         cfg_pms["N"] = cfg_pms["described_syn"] + cfg_pms["add_rand_syn"]
         cfg_pms["max_rand_events_per_syn"] = int(cfg.get("max_rand_events_per_syn", 1))
-        
-        cfg_pms["axonal_support"] = cfg["axonal_support"]
             
         cfg_pms["verbose_sim"] = cfg.get("verbose_sim", True)
         cfg_pms["sim_plot_save"] = cfg["sim_plot_save"]
@@ -55,7 +55,6 @@ def read_config(name_without_path):
         cfg_pms["output_sim_csv"] = cfg.get("output_sim_csv","sim_summary.csv")
         cfg_pms["output_pred_csv"] = cfg.get("output_pred_csv","pred_summary.csv")
         
-        cfg_pms["axonal_support"] = cfg["axonal_support"]
         cfg_pms["dendritic_delay_ms"]   = cfg["dendritic_delay_ms"]
         cfg_pms["min_dendritic_delay_ms"]   = cfg["min_dendritic_delay_ms"]
         cfg_pms["max_dendritic_delay_ms"]   = cfg["max_dendritic_delay_ms"]  

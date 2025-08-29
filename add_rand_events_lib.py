@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-# In[ ]:
-
-
 #  add_rand_events_lib.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>

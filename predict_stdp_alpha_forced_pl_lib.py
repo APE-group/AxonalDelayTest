@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 #  predict_stdp_alpha_forced_pl_lib.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
@@ -348,7 +350,7 @@ def get_synapse_color(syn_id):
     return f"C{syn_id % 10}"
 
 def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
-                            start_syn, end_syn, prediction_plot_save):
+                            start_syn, end_syn, label, fname):
     """
     We'll define 'time_of_event' as post_arr if dt>0, or pre_arr if dt<0,
     lumpsum line => dt=0 => we might use pre_arr.
@@ -388,63 +390,14 @@ def plot_synaptic_evolution(synapses_trajectories, time_min_ms, time_max_ms,
 
         color = get_synapse_color(syn_id)
         plt.plot(times_ms, weights, label=f"Syn {syn_id}", color=color, marker='o')
-
-    plt.title(f"PRED: Synaptic evolution (Syn {start_syn}…{end_syn})")
+    
+    plt.title(label+f"_PRED: Synaptic evolution (Syn {start_syn}…{end_syn})")
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
     plt.xlim(time_min_ms, time_max_ms)
     plt.legend()
-    if prediction_plot_save:
-        plt.savefig("predicted_synaptic_evolution.png")
-
-def plot_pre_raster(pre_spikes_dict, N, time_min_ms, time_max_ms,
-                    start_syn, end_syn, prediction_plot_save):
-    """
-    Raster for *pre-synaptic* neurons, only synapses in [start_syn..end_syn].
-    We'll set integer y-ticks from start_syn..end_syn only.
-    """
-    plt.figure()
-    plt.title(f"PRED: Raster Pre-Syn Neus {start_syn}..{end_syn} (ms)")
-    plt.xlabel("Time (ms)")
-    plt.ylabel("Neuron ID (Pre)")
-
-    for i in range(start_syn, end_syn+1):
-        times_ms = pre_spikes_dict[i]
-        color    = get_synapse_color(i)
-        y_vals   = [i]*len(times_ms)
-        plt.scatter(times_ms, y_vals, color=color, marker='.', label=f"Pre {i}")
-
-    plt.xlim(time_min_ms, time_max_ms)
-    plt.yticks(range(start_syn, end_syn+1))
-    plt.legend()
-    if prediction_plot_save:
-        plt.savefig("predicted_presyn_rastegram.png")
-    # no plt.show()
-
-def plot_post_raster(post_spikes_dict, N, time_min_ms, time_max_ms,
-                     start_syn, end_syn, prediction_plot_save):
-    """
-    Raster for *post-synaptic* neurons in [start_syn..end_syn].
-    We'll set integer y-ticks from (start_syn+N)..(end_syn+N).
-    """
-    plt.figure()
-    plt.title(f"PRED: Raster Post-Syn Neus {start_syn}..{end_syn} (ms)")
-    plt.xlabel("Time (ms)")
-    plt.ylabel("Neuron ID (Post)")
-
-    for i in range(start_syn, end_syn+1):
-        times_ms = post_spikes_dict[i]
-        color    = get_synapse_color(i)
-        neuron_id= i + N
-        y_vals   = [neuron_id]*len(times_ms)
-        plt.scatter(times_ms, y_vals, color=color, marker='.', label=f"Post {neuron_id}")
-
-    plt.xlim(time_min_ms, time_max_ms)
-    plt.yticks(range(start_syn+N, end_syn+N+1))
-    plt.legend()
-    if prediction_plot_save:
-        plt.savefig("predicted_postsyn_rastegram.png")
-    # no plt.show()
+    if fname:
+        plt.savefig(fname)
 
 def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
     plt.figure()
@@ -466,7 +419,7 @@ def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname
 # Main
 ###############################################################################
 
-def predict_stdp_alpha_forced_pl(config):
+def predict_stdp_alpha_forced_pl(config,prefix=""):
     """
     1) Read config,
     2) Load spikes,
@@ -486,8 +439,8 @@ def predict_stdp_alpha_forced_pl(config):
     start_syn            = config["start_syn"]
     end_syn              = config["end_syn"]
     N                    = config["N"]
-    csv_file_pre         = config["csv_file_pre"]
-    csv_file_post        = config["csv_file_post"]
+    csv_file_pre         = prefix+config["csv_file_pre"]
+    csv_file_post        = prefix+config["csv_file_post"]
     prediction_plot_save = config["prediction_plot_save"]
     T_sim_ms             = config["T_sim_ms"]
     resolution           = config["resolution"]
@@ -536,7 +489,7 @@ def predict_stdp_alpha_forced_pl(config):
     final_weights         = [0.0]*N
     synapses_trajectories = {}
 
-    summary_file = "predicted_synaptic_evolution.csv"
+    summary_file = prefix+"predicted_synaptic_evolution.csv"
     with open(summary_file, "w", newline="") as f_out:
         writer = csv.writer(f_out)
         writer.writerow([
@@ -611,18 +564,19 @@ def predict_stdp_alpha_forced_pl(config):
     # Plot
     global_min_time_ms, global_max_time_ms = 0, T_sim_ms
     plot_raster(pre_spikes_dict, 0, global_min_time_ms, global_max_time_ms,
-                start_syn, end_syn, "PRED: PRE-neurons", 
-                "predicted_presynneu_raster.png" if prediction_plot_save else None)
+                start_syn, end_syn, prefix+"PRED: PRE-neurons", 
+                prefix+"predicted_presynneu_raster.png" if prediction_plot_save else None)
     plot_raster(post_spikes_dict, N, global_min_time_ms, global_max_time_ms,
-                     start_syn, end_syn, "PRED: POST-neurons", 
-                "predicted_postsynneu_raster.png" if prediction_plot_save else None)
+                     start_syn, end_syn, prefix+"PRED: POST-neurons", 
+                prefix+"predicted_postsynneu_raster.png" if prediction_plot_save else None)
     plot_synaptic_evolution(synapses_trajectories, global_min_time_ms, global_max_time_ms,
-                            start_syn, end_syn, prediction_plot_save)
+                start_syn, end_syn, prefix+"PRED: Synaptic evolution",
+                prefix+"predicted_synaptic_evolution.png" if prediction_plot_save else None)
     plot_raster(arrived_pre_dict, 0, global_min_time_ms, global_max_time_ms,
-                start_syn, end_syn, "PRED: PRE-syn event arrival time", 
-                "predicted_presynevent_raster.png" if prediction_plot_save else None)
+                start_syn, end_syn, prefix+"PRED: PRE-syn event arrival time", 
+                prefix+"predicted_presynevent_raster.png" if prediction_plot_save else None)
     plot_raster(arrived_post_dict, N, global_min_time_ms, global_max_time_ms,
-                     start_syn, end_syn, "PRED: POST-syn event arrival time", 
-                "predicted_postsynevent_raster.png" if prediction_plot_save else None)
+                     start_syn, end_syn, prefix+"PRED: POST-syn event arrival time", 
+                prefix+"predicted_postsynevent_raster.png" if prediction_plot_save else None)
 
     return analysis_summary

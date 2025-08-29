@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 #  config_sim_test_Ax_and_Dendr_Delay_STDP.yaml
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
@@ -23,9 +25,7 @@
 described_syn: 0                          # total number of synapses described in this file
 add_rand_syn: 1000
 random_seed: 123456
-max_rand_events_per_syn: 5
-
-axonal_support: True
+max_rand_events_per_syn: 15
 
 verbose_sim: False
 verbose_pred: False
@@ -40,14 +40,14 @@ csv_file_pre: 'spikes_pre_neurons.csv'
 csv_file_post: 'spikes_post_neurons.csv'
 
 # Simulation parameters
-T_sim_ms: 180          # Total simulation time (ms)
+T_sim_ms: 200          # Total simulation time (ms)
 save_int_ms: 10        # Interval for saving synaptic weights (ms)
 resolution: 0.1        # NEST simulator resolution
 # Optional start and end synapse ID to focus sim and analysis on a subset
 #start_syn: 4
 #end_syn: 4
 
-output_sim_csv: "sim_summary.csv"
+#output_sim_csv: "sim_summary.csv"
 
 # Initial weights for each STDP connection
 W_init: []

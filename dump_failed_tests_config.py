@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 #  dump_failed_tests_config.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
@@ -20,7 +22,7 @@
 
 import yaml
 
-def dump_failed_tests_config(config,failureList):
+def dump_failed_tests_config(config,failureList,filename):
 
 
     failed_config = {}
@@ -43,7 +45,7 @@ def dump_failed_tests_config(config,failureList):
     failed_config['spike_train_post'] = spike_train_post
 
 
-    with open('failed_config.yaml', 'w') as file:
+    with open(filename, 'w') as file:
         yaml.dump(failed_config, file)
 
     return

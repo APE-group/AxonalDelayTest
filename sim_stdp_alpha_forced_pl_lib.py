@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding: utf-8
 #  sim_stdp_alpha_forced_pl_lib.py
 #  Copyright © 2025   Pier Stanislao Paolucci   <pier.paolucci@roma1.infn.it>
 #  Copyright © 2025   Elena Pastorelli          <elena.pastorelli@roma1.infn.it>
@@ -341,7 +343,7 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     plt.xlim(0, T_sim_ms)
     plt.xlabel("Time (ms)")
     plt.ylabel("Synaptic Weight")
-    plt.title(f"SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
+    plt.title(f"{prefix}SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
     
     if sim_plot_save:
         plt.savefig(prefix+"simulated_synaptic_evolution.png", dpi=150)
@@ -356,11 +358,11 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     tmin, tmax = 0, T_sim_ms                    
 
     plot_raster(pre_dict, 0, tmin, tmax,
-                start_syn, end_syn, "SIM: PRE-neurons",
+                start_syn, end_syn, prefix+"SIM: PRE-neurons",
                 prefix+"simulated_presynneu_raster.png" if sim_plot_save else None)
 
     plot_raster(post_dict, N, tmin, tmax,
-                start_syn, end_syn, "SIM: POST-neurons",
+                start_syn, end_syn, prefix+"SIM: POST-neurons",
                 prefix+"simulated_postsynneu_raster.png" if sim_plot_save else None)
 
     
@@ -369,7 +371,7 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     #--------------------------------------------------------------------------
     if plot_mm:
         if n_mm_pre > 0:
-            plt.figure('Membrane Voltage PRE (iaf_psc_alpha)')
+            plt.figure(prefix+'Membrane Voltage PRE (iaf_psc_alpha)')
             for i in reversed(range(n_mm_pre)):
                 plt.subplot(n_mm_pre,1,n_mm_pre-i)
                 plt.plot(res_pre[i]['times'], res_pre[i]['V_m'], label='neu '+str(start_syn+i))
@@ -378,11 +380,11 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
                 if i==n_mm_pre-1:
-                    plt.title('SIM: PRE-neurons')
+                    plt.title(prefix+'SIM: PRE-neurons')
             plt.xlabel('Time [ms]')
     
         if n_mm_post > 0:
-            plt.figure('Membrane Voltage POST (iaf_psc_alpha)')
+            plt.figure(prefix+'Membrane Voltage POST (iaf_psc_alpha)')
             for i in reversed(range(n_mm_post)):
                 plt.subplot(n_mm_post,1,n_mm_post-i)
                 plt.plot(res_post[i]['times'], res_post[i]['V_m'], label='neu '+str(start_syn+i))
@@ -391,7 +393,7 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
                 plt.xticks(np.arange(0, T_sim_ms + 1, 10))
                 plt.ylabel('Vm [mV]')
                 if i==n_mm_post-1:
-                    plt.title('SIM: POST-neurons')
+                    plt.title(prefix+'SIM: POST-neurons')
             plt.xlabel('Time [ms]')
     
     
