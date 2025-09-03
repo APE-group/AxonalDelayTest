@@ -25,10 +25,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 def get_syn_color(k):      # cycle through C0…C9
     return f"C{k % 10}"
 
-def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname):
+def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label,
+                filename,output_files_list):
     plt.figure()
     plt.title(label)
     plt.xlabel("Time (ms)")
@@ -41,8 +43,9 @@ def plot_raster(spike_dict, offset, tmin, tmax, start_syn, end_syn, label, fname
     plt.xlim(tmin, tmax)
     plt.yticks(range(start_syn+offset, end_syn+offset+1))
     plt.tight_layout()
-    if fname:
-        plt.savefig(fname)
+    if filename:
+        plt.savefig(filename)
+        output_files_list.append(filename)
         
 def df_to_spikedict(df):
     """
@@ -56,7 +59,7 @@ def df_to_spikedict(df):
     )
 
         
-def sim_stdp_alpha_forced_pl(cfg,prefix=""):
+def sim_stdp_alpha_forced_pl(config,prefix=""):
     """
     For each synapse n:
       - PRE-neuron: iaf_psc_alpha(high threshold), forced by spike_generator_in.
@@ -65,47 +68,50 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
       - Different spike trains are used for pre- and post-neurons.
       - We record spikes (pre & post), the evolving weight and the membrane potentials.
     """
-    
-    axonal_support        = cfg["axonal_support"]
-        
-    verbose_sim           = cfg["verbose_sim"]
-    sim_plot_save         = cfg["sim_plot_save"]
-    plot_display          = cfg["plot_display"]
-
-    csv_file_pre          = cfg["csv_file_pre"]
-    csv_file_post         = cfg["csv_file_post"]
-    
-    T_sim_ms              = cfg["T_sim_ms"]
-    save_int_ms           = cfg["save_int_ms"]
-    resolution            = cfg["resolution"]
-    N                     = cfg["N"]
+           
+    T_sim_ms              = config["T_sim_ms"]
+    save_int_ms           = config["save_int_ms"]
+    resolution            = config["resolution"]
+    N                     = config["N"]
 
     # If user doesn't specify, default to [0..N-1]
-    start_syn             = cfg["start_syn"]
-    end_syn               = cfg["end_syn"]
+    start_syn             = config["start_syn"]
+    end_syn               = config["end_syn"]
     
-    spike_train_pre_ms    = cfg["spike_train_pre_ms"]  
-    spike_train_post_ms   = cfg["spike_train_post_ms"]  
+    spike_train_pre_ms    = config["spike_train_pre_ms"]  
+    spike_train_post_ms   = config["spike_train_post_ms"]  
 
-    axonal_support        = cfg["axonal_support"]
+    axonal_support        = config["axonal_support"]
     
     if axonal_support:
-        dendritic_delay   = cfg["dendritic_delay_ms"]
-        axonal_delay      = cfg["axonal_delay_ms"]
+        dendritic_delay   = config["dendritic_delay_ms"]
+        axonal_delay      = config["axonal_delay_ms"]
     else:
-        delay             = cfg["dendritic_delay_ms"]
-        axonal_delay      = cfg["axonal_delay_ms"]
+        delay             = config["dendritic_delay_ms"]
+        axonal_delay      = config["axonal_delay_ms"]
         spike_train_pre_ms= [np.array(spike_train_pre_ms[i])+axonal_delay[i] for i in range(len(axonal_delay))]
         T_sim_ms          = T_sim_ms + 2*max(axonal_delay)
     
-    W_init                = cfg["W_init"]
+    W_init                = config["W_init"]
 
-    stdp_params           = cfg["stdp_params"]
+    stdp_params           = config["stdp_params"]
+    neu_params            = config["neu_params"]
 
-    forced_in_weight      = cfg["forced_in_weight"]
-    forced_out_weight     = cfg["forced_out_weight"]
+    forced_in_weight      = config["forced_in_weight"]
+    forced_out_weight     = config["forced_out_weight"]
 
-    plot_mm               = cfg["plot_mm"]
+    verbose_sim           = config["verbose_sim"]
+    sim_plot_save         = config["sim_plot_save"]
+
+    csv_file_pre          = config["csv_file_pre"]
+    csv_file_post         = config["csv_file_post"]
+    
+    plot_mm               = config["plot_mm"]
+    
+    save_files_in_folder  = config["save_files_in_folder"]
+    output_files_list     = config["output_files_list"]
+    
+    
 
     # Validate range
     if not isinstance(start_syn, int) or not isinstance(end_syn, int):
@@ -137,11 +143,7 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     #--------------------------------------------------------------------------
     if verbose_sim: print(" Build the PRE-neuron ------------------")
     pre_neurons = nest.Create("iaf_psc_alpha", N)
-    nest.SetStatus(pre_neurons, {
-        "V_th": -10.0,   # artificially high
-        "E_L": -70.0,
-        "V_reset": -70.0
-    })
+    nest.SetStatus(pre_neurons, params=neu_params)
 
     
     #--------------------------------------------------------------------------
@@ -150,11 +152,7 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     #--------------------------------------------------------------------------
     if verbose_sim: print(" Build the POST-neuron ------------------")
     post_neurons = nest.Create("iaf_psc_alpha", N)
-    nest.SetStatus(post_neurons, {
-        "V_th": -10.0,   # artificially high
-        "E_L": -70.0,
-        "V_reset": -70.0
-    })
+    nest.SetStatus(post_neurons, params=neu_params)
 
     
     #--------------------------------------------------------------------------
@@ -288,8 +286,11 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     # Save weight evolution to CSV
     #--------------------------------------------------------------------------
     df_w = pd.DataFrame(weight_records)
-    df_w.to_csv(prefix+"simulated_synaptic_evolution.csv", index=False)
+    filename = prefix+"simulated_synaptic_evolution.csv"
+    df_w.to_csv(filename, index=False)
     print("SIM: Saved synaptic weight evolution to 'simulated_synaptic_evolution.csv'")
+    
+    output_files_list.append(filename)
 
     
     #--------------------------------------------------------------------------
@@ -302,8 +303,10 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
         "senders": np.asarray(events_pre["senders"], dtype=int) - offset,
         "times":   np.around(events_pre["times"],decimals=int(np.log(1/resolution)))
     })
+    filename = prefix+csv_file_pre
     df_pre.to_csv(prefix+csv_file_pre, index=False)
     print("SIM: Saved spikes of pre_neurons to", csv_file_pre)
+    output_files_list.append(filename)    
 
     events_post = spike_rec_post.get("events")
     df_post = pd.DataFrame({
@@ -311,8 +314,10 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
         "senders": np.asarray(events_post["senders"], dtype=int) - offset,
         "times":   np.around(events_post["times"],decimals=int(np.log(1/resolution)))
     })
+    filename = prefix+csv_file_post
     df_post.to_csv(prefix+csv_file_post, index=False)  
     print("SIM: Saved spikes of post_neurons to", csv_file_post)
+    output_files_list.append(filename)
 
     
     #--------------------------------------------------------------------------
@@ -346,7 +351,9 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
     plt.title(f"{prefix}SIM: Synaptic evolution (Syn {start_syn}…{end_syn})")
     
     if sim_plot_save:
-        plt.savefig(prefix+"simulated_synaptic_evolution.png", dpi=150)
+        filename = prefix+"simulated_synaptic_evolution.png"
+        plt.savefig(filename, dpi=150)
+        output_files_list.append(filename)
     print("SIM: Saved synaptic weight plot to 'simulated_synaptic_evolution.png'")
 
     
@@ -359,11 +366,13 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
 
     plot_raster(pre_dict, 0, tmin, tmax,
                 start_syn, end_syn, prefix+"SIM: PRE-neurons",
-                prefix+"simulated_presynneu_raster.png" if sim_plot_save else None)
+                prefix+"simulated_presynneu_raster.png" if sim_plot_save else None,
+                output_files_list)
 
     plot_raster(post_dict, N, tmin, tmax,
                 start_syn, end_syn, prefix+"SIM: POST-neurons",
-                prefix+"simulated_postsynneu_raster.png" if sim_plot_save else None)
+                prefix+"simulated_postsynneu_raster.png" if sim_plot_save else None,
+                output_files_list)
 
     
     #--------------------------------------------------------------------------
@@ -406,4 +415,4 @@ def sim_stdp_alpha_forced_pl(cfg,prefix=""):
             "final_syn_value": df_w[f"w_{i}"].iloc[-1]}
         for i in range(start_syn, end_syn+1)
     }
-    return df_w, sim_summary, plot_display
+    return df_w, sim_summary

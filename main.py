@@ -25,91 +25,95 @@ import pandas as pd
 import random
 import yaml
 from read_config_lib import read_config
-from get_script_dir import *
 from sim_stdp_alpha_forced_pl_lib import sim_stdp_alpha_forced_pl
 from predict_stdp_alpha_forced_pl_lib import predict_stdp_alpha_forced_pl
 from compare_sim_prediction_lib import compare_csv_files
 from add_rand_events_lib import add_rand_events
-from dump_failed_tests_config import dump_failed_tests_config    
-    
-if __name__ == "__main__":
-    config_pms = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
-    config_pms = add_rand_events(config_pms)
+from utils_lib import *
 
-    with open('current_config.yaml', 'w') as file:
-        yaml.dump(config_pms, file)
+
+if __name__ == "__main__":
+    config = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
+    config = add_rand_events(config)
+
+    with open("current_config.yaml", "w") as file:
+        yaml.dump(config, file)
+
+    output_files_list = config["output_files_list"]
+    output_files_list.append("current_config.yaml")
+
         
     #################################
     # SIMULATION WITH AXONAL DELAY
     #################################
 
-    config_pms["axonal_support"] = True
+    config["axonal_support"] = True
+
+    # Simulation
+    df_w, sim_summary = sim_stdp_alpha_forced_pl(config,prefix="AxD_")
     
-    # sim AxD 1)
-    df_w, sim_summary, plot_display = sim_stdp_alpha_forced_pl(config_pms,prefix="AxD_")
-    #print("df_w",df_w)
-    
-    # sim AxD 2)convert the dictionary to a Pandas DataFrame
-    #    Each dictionary entry has keys: ["syn_ID", "start_syn_value", "final_syn_value"]
+    # Convert the dictionary to a Pandas DataFrame
     df_sim_summary = pd.DataFrame.from_dict(sim_summary, orient='index')
     
-    # sim AxD 3) Save to CSV
+    # Save to CSV
     output_AxD_sim_csv = "AxD_sim_summary.csv"
     df_sim_summary.to_csv(output_AxD_sim_csv, index=False)
     print(f"Simulation summary saved to {output_AxD_sim_csv}.")
+    output_files_list.append(output_AxD_sim_csv)
 
+    
     #################################
     # PREDICTION WITH AXONAL DELAY
     #################################
 
-    # prediction 1) Run the STDP routine, which returns a dictionary
-    prediction_summary = predict_stdp_alpha_forced_pl(config_pms,prefix="AxD_")
+    # Prediction
+    prediction_summary = predict_stdp_alpha_forced_pl(config,prefix="AxD_")
     
-    # prediction 2) Convert the dictionary to a Pandas DataFrame
-    #    Each dictionary entry has keys: ["syn_ID", "start_syn_value", "final_syn_value",
-    #                                     "axonal_delay", "dendritic_delay"]
+    # Convert the dictionary to a Pandas DataFrame
     df_summary = pd.DataFrame.from_dict(prediction_summary, orient='index')
     
-    # prediction 3) Save to CSV
+    # Save to CSV
     output_AxD_pred_csv = "AxD_pred_summary.csv"
     df_summary.to_csv(output_AxD_pred_csv, index=False)
     print(f"Prediction summary saved to {output_AxD_pred_csv}.")
+    output_files_list.append(output_AxD_pred_csv)
+
 
     #################################
     # SIMULATION WITHOUT AXONAL DELAY
     #################################
     
-    config_pms["axonal_support"] = False
+    config["axonal_support"] = False
 
-    # sim noAxD 1)
-    df_w, sim_summary, plot_display = sim_stdp_alpha_forced_pl(config_pms,prefix="noAxD_")
-    #print("df_w",df_w)
+    # Simulation
+    df_w, sim_summary  = sim_stdp_alpha_forced_pl(config,prefix="noAxD_")
     
-    # sim noAxD 2)convert the dictionary to a Pandas DataFrame
-    #    Each dictionary entry has keys: ["syn_ID", "start_syn_value", "final_syn_value"]
+    # Convert the dictionary to a Pandas DataFrame
     df_sim_summary = pd.DataFrame.from_dict(sim_summary, orient='index')
     
-    # sim noAxD 3) Save to CSV
+    # Save to CSV
     output_noAxD_sim_csv = "noAxD_sim_summary.csv"
     df_sim_summary.to_csv(output_noAxD_sim_csv, index=False)
-    print(f"Simulation summary saved to {output_noAxD_sim_csv}.")    
+    print(f"Simulation summary saved to {output_noAxD_sim_csv}.")
+    output_files_list.append(output_noAxD_sim_csv)
 
+    
     #################################
     # PREDICTION WITHOUT AXONAL DELAY
     #################################
 
-    # prediction 1) Run the STDP routine, which returns a dictionary
-    prediction_summary = predict_stdp_alpha_forced_pl(config_pms,prefix="noAxD_")
+    # Prediction 
+    prediction_summary = predict_stdp_alpha_forced_pl(config,prefix="noAxD_")
     
-    # prediction 2) Convert the dictionary to a Pandas DataFrame
-    #    Each dictionary entry has keys: ["syn_ID", "start_syn_value", "final_syn_value",
-    #                                     "axonal_delay", "dendritic_delay"]
+    # Convert the dictionary to a Pandas DataFrame
     df_summary = pd.DataFrame.from_dict(prediction_summary, orient='index')
     
-    # prediction 3) Save to CSV
+    # Save to CSV
     output_noAxD_pred_csv = "noAxD_pred_summary.csv"
     df_summary.to_csv(output_noAxD_pred_csv, index=False)
     print(f"Prediction summary saved to {output_noAxD_pred_csv}.")
+    output_files_list.append(output_noAxD_pred_csv)
+
     
     #################################
     # COMPARISONS
@@ -124,29 +128,37 @@ if __name__ == "__main__":
     print("")
     print("Comparison AxD_sim vs AxD_pred:")
     print("-------------------------------")
-    match_ok, failureList = compare_csv_files(output_AxD_sim_csv, output_AxD_pred_csv, threshold=1e-8)
+    match_ok, failureList = compare_csv_files(output_AxD_sim_csv,output_AxD_pred_csv,
+                                              threshold=1e-8)
     if not match_ok:
-        dump_failed_tests_config(config_pms,failureList,'AxDsimVSAxDpred_failed_config.yaml')
+        dump_failed_tests_config(config,failureList,'AxDsimVSAxDpred_failed_config.yaml')
     
     # Compare 2) noAxD_sim vs noAxD_pred
     print("")   
     print("Comparison noAxD_sim vs noAxD_pred:")
     print("-----------------------------------")
-    match_ok, failureList = compare_csv_files(output_noAxD_sim_csv, output_noAxD_pred_csv, threshold=1e-8)
+    match_ok, failureList = compare_csv_files(output_noAxD_sim_csv,output_noAxD_pred_csv,
+                                              threshold=1e-8)
     if not match_ok:
-        dump_failed_tests_config(config_pms,failureList,'noAxDsimVSnoAxDpred_failed_config.yaml')
-    
-    # Compare 3) AxD_sim vs noAxD_sim
-    print("")
-    print("Comparison AxD_sim vs noAxD_sim:")
-    print("--------------------------------")
-    match_ok, failureList = compare_csv_files(output_AxD_sim_csv, output_noAxD_sim_csv, threshold=1e-8)
-    if not match_ok:
-        dump_failed_tests_config(config_pms,failureList,'AxDsimVSnoAxDsim_failed_config.yaml')
+        dump_failed_tests_config(config,failureList,'noAxDsimVSnoAxDpred_failed_config.yaml')
 
-        
+    if config["compare_AxDsimVSnoAxDsim"]:
+        # Compare 3) AxD_sim vs noAxD_sim
+        print("")
+        print("Comparison AxD_sim vs noAxD_sim:")
+        print("--------------------------------")
+        match_ok, failureList = compare_csv_files(output_AxD_sim_csv,output_noAxD_sim_csv,
+                                                  threshold=1e-8)
+        if not match_ok:
+            dump_failed_tests_config(config,failureList,'AxDsimVSnoAxDsim_failed_config.yaml')
+    
+    # Copy output files in folder
+    if config["save_files_in_folder"]:
+        foldername = copy_in_output_folder(output_files_list)
+        print(f"All output files saved in {foldername}")
+
     # Show all plots
-    if plot_display:
+    if config["plot_display"]:
         plt.show()
     
 

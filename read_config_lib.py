@@ -21,23 +21,32 @@
 
 import os
 import yaml 
+from utils_lib import get_script_dir
 
-from get_script_dir import get_script_dir
+
 def read_config(name_without_path):
     current_dir = get_script_dir()
     cfg_file = os.path.join(current_dir,name_without_path)
     with open(cfg_file, 'r') as f:
         cfg = yaml.safe_load(f)
         cfg_pms={}
-        cfg_pms["random_seed"] = int(cfg.get("random_seed", 123456))
+
         cfg_pms["described_syn"] = cfg["described_syn"]
         cfg_pms["add_rand_syn"] = int(cfg.get("add_rand_syn", 0))
         cfg_pms["N"] = cfg_pms["described_syn"] + cfg_pms["add_rand_syn"]
+        assert (cfg_pms["N"] > 0)
+        cfg_pms["random_seed"] = int(cfg.get("random_seed", 123456))
         cfg_pms["max_rand_events_per_syn"] = int(cfg.get("max_rand_events_per_syn", 1))
             
         cfg_pms["verbose_sim"] = cfg.get("verbose_sim", True)
+        cfg_pms["verbose_pred"] = cfg.get("verbose_pred", True)
+
         cfg_pms["sim_plot_save"] = cfg["sim_plot_save"]
+        cfg_pms["prediction_plot_save"] = cfg["prediction_plot_save"]
+        
         cfg_pms["plot_display"] = cfg["plot_display"]
+        cfg_pms["save_files_in_folder"] = cfg["save_files_in_folder"]
+        cfg_pms["output_files_list"] = []
         
         cfg_pms["csv_file_pre"] = cfg["csv_file_pre"]
         cfg_pms["csv_file_post"] = cfg["csv_file_post"]
@@ -49,39 +58,35 @@ def read_config(name_without_path):
         # If user doesn't specify, default to [1..N]
         cfg_pms["start_syn"] = cfg.get("start_syn", 0)
         cfg_pms["end_syn"] = cfg.get("end_syn", cfg_pms["N"]-1)
+               
+        cfg_pms["W_init"] = cfg["W_init"]
+        cfg_pms["W_min"] = cfg["W_min"]
+        cfg_pms["W_max"] = cfg["W_max"]
+        
+        cfg_pms["dendritic_delay_ms"] = cfg["dendritic_delay_ms"]
+        cfg_pms["min_dendritic_delay_ms"] = cfg["min_dendritic_delay_ms"]
+        cfg_pms["max_dendritic_delay_ms"] = cfg["max_dendritic_delay_ms"]  
+        
+        cfg_pms["axonal_delay_ms"] = cfg["axonal_delay_ms"]
+        cfg_pms["min_axonal_delay_ms"] = cfg["min_axonal_delay_ms"]
+        cfg_pms["max_axonal_delay_ms"] = cfg["max_axonal_delay_ms"]
         
         cfg_pms["spike_train_pre_ms"] = cfg["spike_train_pre_ms"]  
         cfg_pms["spike_train_post_ms"] = cfg["spike_train_post_ms"]  
-        cfg_pms["output_sim_csv"] = cfg.get("output_sim_csv","sim_summary.csv")
-        cfg_pms["output_pred_csv"] = cfg.get("output_pred_csv","pred_summary.csv")
-        
-        cfg_pms["dendritic_delay_ms"]   = cfg["dendritic_delay_ms"]
-        cfg_pms["min_dendritic_delay_ms"]   = cfg["min_dendritic_delay_ms"]
-        cfg_pms["max_dendritic_delay_ms"]   = cfg["max_dendritic_delay_ms"]  
-        
-        cfg_pms["axonal_delay_ms"]     = cfg["axonal_delay_ms"]
-        cfg_pms["min_axonal_delay_ms"]     = cfg["min_axonal_delay_ms"]
-        cfg_pms["max_axonal_delay_ms"]     = cfg["max_axonal_delay_ms"]
-        
-        cfg_pms["W_init"]                = cfg["W_init"]
-        cfg_pms["W_min"]                = cfg["W_min"]
-        cfg_pms["W_max"]                = cfg["W_max"]
-        
-        cfg_pms["stdp_params"]           = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
+
+        cfg_pms["stdp_params"] = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
                                                         "alpha": 0.11, "mu": 0.4})
         cfg_pms["w_0"] = cfg["w_0"]
-        cfg_pms["forced_in_weight"]      = cfg.get("forced_in_weight",  1000.0)
-        cfg_pms["forced_out_weight"]     = cfg.get("forced_out_weight", 1000.0)
+
+        cfg_pms["neu_params"] = cfg.get("neu_params", {"C_m": 250.0, "E_L": -70.0,
+                                                       "t_ref": 2.0, "tau_m": 10,
+                                                       "V_th": -10.0, "V_reset": -70.0})
         
-        cfg_pms["plot_mm"]               = cfg["plot_mm"]
-        cfg_pms["prediction_plot_save"]  = cfg["prediction_plot_save"]
+        cfg_pms["forced_in_weight"] = cfg.get("forced_in_weight",  1000.0)
+        cfg_pms["forced_out_weight"] = cfg.get("forced_out_weight", 1000.0)
+        
+        cfg_pms["plot_mm"] = cfg["plot_mm"]
 
-        cfg_pms["csv_file_pre"]  = cfg["csv_file_pre"]
-        cfg_pms["csv_file_post"] = cfg["csv_file_post"]
-        cfg_pms["verbose_pred"]  = cfg.get("verbose_pred", True)
-
-        cfg_pms["stdp_params"]  = cfg["stdp_params"]
-
-        assert (cfg_pms["N"] + cfg_pms["add_rand_syn"] > 0)
+        cfg_pms["compare_AxDsimVSnoAxDsim"] = cfg["compare_AxDsimVSnoAxDsim"]
 
         return cfg_pms
