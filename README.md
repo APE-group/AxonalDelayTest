@@ -6,6 +6,7 @@ It runs controlled simulations, logs spikes and weight trajectories, computes **
 > Authors: Pier Stanislao Paolucci, Elena Pastorelli  
 > License: GPL-3.0-only
 
+![Birdview summary](AxDelTest.png)
 ---
 
 ## What’s in the repo
