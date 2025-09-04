@@ -13,15 +13,15 @@ It runs controlled simulations, logs spikes and weight trajectories, computes **
 
 ```
 AxonalDelayTest/
+├─ config_sim_test_Ax_and_Dendr_Delay_STDP.yaml   # USER: Please change this file
 ├─ main.py                                   # Orchestrates the full pipeline
 ├─ sim_stdp_alpha_forced_pl_lib.py           # NEST simulation (forced spikes, STDP, logging, plots)
-├─ predict_stdp_alpha_forced_pl_lib.py       # Offline STDP predictor + plots
+├─ predict_stdp_alpha_forced_pl_lib.py       # Offline STDP predictor + plots, using spike time from sims
 ├─ compare_sim_prediction_lib.py             # CSV comparators with relative-threshold checking
 ├─ add_rand_events_lib.py                    # Adds reproducible random pre/post spikes per synapse
 ├─ read_config_lib.py                        # Loads/validates YAML config, fills sane defaults
 ├─ utils_lib.py                              # Output folder bundling, failure config dumper, misc
-├─ config_sim_test_Ax_and_Dendr_Delay_STDP.yaml   # Main example config
-├─ config_deterministic.yaml                 # Deterministic, concise test-case config
+├─ config_deterministic.yaml                 # Deterministic, concise test-case config, included in addition to rand tests
 └─ README.md / LICENSE
 ```
 
@@ -30,11 +30,11 @@ AxonalDelayTest/
 ## Key idea & flow
 
 1) **Simulation (NEST)**  
-   - A population of **pre** and **post** neurons are driven by **spike_generators** to enforce precise spike trains you define in the config.
+   - A population of N **pre** and **post** neuron pairs are connected by a single synapse per pair. Each pair is driven by external **spike_generators** that stimulate both the pre- and post- neurons. They enforce precise pre-synaptic spike trains, while the exact timing of post-synaptic spikes is affected also by the currents injected by the connecting synapse. The set of neuron pairs may include both pairs driven by **determinist** lists of events and **randomly** driven pairs.  
    - Synapses implement a **pair-based, homogeneous STDP** rule (see `stdp_params`).
    - Two modes are run:
      - **AxD**: uses **axonal_delay_ms** + **dendritic_delay_ms** as provided.
-     - **noAxD**: uses an **effective dendritic delay = axonal + dendritic** (single-delay emulation).
+     - **noAxD**: delays the presynaptic stimuli by an amount equal to the an **axonal** delay specified by either the config file **AxD** or additional **random** pairs for the **AxD** simulation. In this case the name of the "delay" in the simulation is 
    - The code will try to copy one of these models to `my_stdp_pl_hom`:
      - `"stdp_pl_synapse_hom_ax_delay"` (if present in your NEST build)  
        **or**  
