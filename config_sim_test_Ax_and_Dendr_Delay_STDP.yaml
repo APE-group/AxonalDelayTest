@@ -22,7 +22,7 @@
 
 # switch between stdp_pl_synapse_hom_ax_delay and stdp_pl_synapse_hom
 
-described_syn: 0                          # total number of synapses described in this file
+described_syn: 0                          # total number of deterministic description of synaptic events in this file
 add_rand_syn: 1000
 random_seed: 123456
 max_rand_events_per_syn: 15
