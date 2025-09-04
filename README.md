@@ -50,26 +50,15 @@ AxonalDelayTest/
 
 ## Requirements
 
-- **Python**: 3.9+ (tested with modern 3.x)
-- **NEST Simulator**: 3.x  
-  - If you are evaluating a branch/patch adding **axonal delays**, ensure it exposes the synapse model
-    `stdp_pl_synapse_hom_ax_delay`.  
-  - If that model doesn’t exist, the code falls back to `stdp_pl_synapse_hom` (dendritic-only).
-- Python packages:
-  - `numpy`, `pandas`, `matplotlib`, `pyyaml`
-- A matplotlib backend (set `plot_display: false` for headless runs).
-
-Install Python deps:
-```bash
-pip install numpy pandas matplotlib pyyaml
-```
+- **Python**: this code has been developed using 3.8
+- **NEST Simulator**: official 3.8 and branch https://github.com/JanVogelsang/nest-simulator/tree/stdp_long_axonal_delays for **AxD**
 
 ---
 
 ## Quick start
 
 ```bash
-# 1) Adjust a config if needed (see next section).
+# 1) Adjust the config_.._.yaml if needed (see next section).
 # 2) Run the full pipeline:
 python main.py
 ```
