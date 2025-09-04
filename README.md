@@ -33,24 +33,19 @@ AxonalDelayTest/
    - A population of N **pre** and **post** neuron pairs are connected by a single synapse per pair. Each pair is driven by external **spike_generators** that stimulate both the pre- and post- neurons. They enforce precise pre-synaptic spike trains, while the exact timing of post-synaptic spikes is affected also by the currents injected by the connecting synapse. The set of neuron pairs may include both pairs driven by **determinist** lists of events and **randomly** driven pairs.  
    - Synapses implement a **pair-based, homogeneous STDP** rule (see `stdp_params`).
    - Two modes are run:
-     - **AxD**: uses **axonal_delay_ms** + **dendritic_delay_ms** as provided.
-     - **noAxD**: delays the presynaptic stimuli by an amount equal to the an **axonal** delay specified by either the config file **AxD** or additional **random** pairs for the **AxD** simulation, while the simple "delay" is set equal to the dendritic delay.
-   - The code will try to copy one of these models to `my_stdp_pl_hom`:
-     - `"stdp_pl_synapse_hom_ax_delay"` (if present in your NEST build)  
-       **or**  
-     - `"stdp_pl_synapse_hom"` (fallback; standard dendritic delay only).
+     - **AxD**: uses **axonal_delay_ms** + **dendritic_delay_ms** as provided. This simulation uses the "stdp_pl_synapse_hom_ax_delay" synapse model.
+     - **noAxD**: delays the presynaptic stimuli by an amount equal to the an **axonal** delay specified by either the config file **AxD** or additional **random** pairs for the **AxD** simulation, while the simple "delay" is set equal to the dendritic delay. This sim uses the "stdp_pl_synapse_hom"` (fallback; standard dendritic delay only).
    - Spikes, membrane traces (optional), and **weight evolution** are logged and plotted.
 
 2) **Prediction (offline)**  
    - Loads the pre/post spike CSVs emitted by the simulation.
-   - Applies the **same STDP rule** to produce a predicted weight trajectory and summary.
-   - Produces rasters & weight plots of the **predicted** evolution.
+   - Applies the formulas of the **STDP rule** to produce a predicted weight trajectory and summary.
+   - Produces rasters & weight plots of the **predicted** synaptic evolution.
 
 3) **Comparison**  
-   - `compare_sim_prediction_lib.py` tests **simulation vs prediction** (AxD and noAxD) with a relative difference threshold.
-   - Optionally tests **AxD simulation vs noAxD simulation** (equivalence when total delay is preserved).  
-     Failures are summarized and a **minimal reproducer config** is dumped to `AxDsimVSnoAxDsim_failed_config.yaml`.
-
+   - `compare_sim_prediction_lib.py`:the final value assumed by the synapses of **simulation vs prediction** (AxD and noAxD) with a relative difference threshold are compared.
+   - If the user sets the **compare_AxDsimVSnoAxDsim** config value to: True, the optional test **AxD simulation vs noAxD simulation** is launched (the assumption is the equivalence of the final value of the synaptic trajectory).
+   - Failures are summarized and a **minimal reproducer config** is dumped to files: e.g. `AxDsimVSAxDpred_failed_config.yaml` and similar file names for the other comparisons.
 ---
 
 ## Requirements
