@@ -1,6 +1,6 @@
 # AxonalDelayTest
 
-Testbed to evaluate **axonal** and **dendritic** delays in NEST, and to verify that a two-delay implementation (axonal + dendritic) (in the following **AxD** behaves as expected relative to current released NEST versions (dendritic-only “synaptic delay” in the following "single delay" **noAxD**).  
+Testbed to evaluate **axonal** and **dendritic** delays in NEST, and to verify that a two-delay implementation (axonal + dendritic delay, in the following **AxD**) behaves as expected relative to current released NEST versions (dendritic-only “synaptic delay” in the following "single delay" **noAxD**).  
 It runs controlled simulations, logs spikes and weight trajectories, computes **offline STDP predictions**, and compares **simulation vs prediction** for both the **AxD** and **NoAxD** configurations, as well as (optionally, dotted in the next figure) the equivalence of the synaptic trajectory of **AxD** vs **noAxD** simulations.
 
 > Authors: Pier Stanislao Paolucci, Elena Pastorelli  
@@ -63,24 +63,26 @@ AxonalDelayTest/
 python main.py
 ```
 
-What you’ll get (filenames are prefixed with `AxD_` or `noAxD_` for the two modes):
+What you’ll get (filenames are prefixed with `AxD` or `noAxD` for the two modes):
+
+If `save_files_in_folder: true`, all outputs are copied to a timestamped folder.
 
 - **Simulation**:
-  - `AxD_sim_summary.csv`, `noAxD_sim_summary.csv` (per-synapse start/final weights)
-  - `AxD_simulated_synaptic_evolution.csv` (+ `.png`)
-  - `AxD_simulated_presynneu_raster.png`, `AxD_simulated_postsynneu_raster.png`
+  - `<prefix>_sim_summary.csv` (per-synapse simulated start/final weights)
+  - `<prefix>_spikes_pre_neurons.csv`, `<prefix>_spikes_post_neurons.csv` (spike times from sim)
+  - `<prefix>_simulated_synaptic_evolution.csv` (+ `.png`)
+  - `<prefix>_simulated_presynneu_raster.png`, `<prefix>_simulated_postsynneu_raster.png`
   - (Optional) membrane traces if `plot_mm: true`
 - **Prediction**:
-  - `AxD_pred_summary.csv`, `noAxD_pred_summary.csv` (per-synapse predicted final weights)
-  - `AxD_predicted_synaptic_evolution.csv` (+ `.png`)
-  - `AxD_predicted_presynneu_raster.png`, `AxD_predicted_postsynneu_raster.png`
+  - `<prefix>_pred_summary.csv` (per-synapse predicted start/final weights)
+  - `<prefix>_predicted_synaptic_evolution.csv` (+ `.png`)
+  - `<prefix>_predicted_presynneu_raster.png`, `<prefix>_predicted_postsynneu_raster.png`
 - Always:
-  - `current_config.yaml` (the exact config used)
-  - If `save_files_in_folder: true`, all outputs are copied to a timestamped folder.
-  - If AxD vs noAxD **equivalence** mismatch: `AxDsimVSnoAxDsim_failed_config.yaml` (minimal reproducer).
-
-> Tip: `config_deterministic.yaml` is great for a tight, predictable run while you wire in a new NEST build.
-
+  - `current_config.yaml` (the complete set of deterministic plus random lists of events of the completed run)
+  - If AxDsim vs AxDpred **equivalence** mismatch: `AxDsimVSAxDpred_failed_config.yaml`.
+  - If noAxDsim vs noAxDpred **equivalence** mismatch: `noAxDsimVSnoAxDpred_failed_config.yaml`.
+  - If AxDsim vs noAxDsim **equivalence** mismatch: `AxDsimVSnoAxDsim_failed_config.yaml`.
+ 
 ---
 
 ## Configuration (YAML)
