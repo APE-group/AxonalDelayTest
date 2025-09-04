@@ -1,7 +1,7 @@
 # AxonalDelayTest
 
-Testbed to evaluate **axonal** and **dendritic** delays in NEST, and to verify that a two-delay implementation (axonal + dendritic) behaves as expected relative to current released NEST versions (dendritic-only “synaptic delay”).  
-It runs controlled simulations, logs spikes and weight trajectories, computes **offline STDP predictions**, and compares **simulation vs prediction** as well as **two-delay vs single-delay equivalence**.
+Testbed to evaluate **axonal** and **dendritic** delays in NEST, and to verify that a two-delay implementation (axonal + dendritic) (in the following **AxD** behaves as expected relative to current released NEST versions (dendritic-only “synaptic delay” in the following "single delay" **noAxD**).  
+It runs controlled simulations, logs spikes and weight trajectories, computes **offline STDP predictions**, and compares **simulation vs prediction** for both the **AxD** and **NoAxD** configurations, as well as (optionally, dotted in the next figure) the equivalence of the synaptic trajectory of **AxD** vs **noAxD** simulations.
 
 > Authors: Pier Stanislao Paolucci, Elena Pastorelli  
 > License: GPL-3.0-only
