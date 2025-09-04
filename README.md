@@ -34,7 +34,7 @@ AxonalDelayTest/
    - Synapses implement a **pair-based, homogeneous STDP** rule (see `stdp_params`).
    - Two modes are run:
      - **AxD**: uses **axonal_delay_ms** + **dendritic_delay_ms** as provided.
-     - **noAxD**: delays the presynaptic stimuli by an amount equal to the an **axonal** delay specified by either the config file **AxD** or additional **random** pairs for the **AxD** simulation. In this case the name of the "delay" in the simulation is 
+     - **noAxD**: delays the presynaptic stimuli by an amount equal to the an **axonal** delay specified by either the config file **AxD** or additional **random** pairs for the **AxD** simulation, while the simple "delay" is set equal to the dendritic delay.
    - The code will try to copy one of these models to `my_stdp_pl_hom`:
      - `"stdp_pl_synapse_hom_ax_delay"` (if present in your NEST build)  
        **or**  
