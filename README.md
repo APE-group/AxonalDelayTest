@@ -46,6 +46,9 @@ AxonalDelayTest/
    - `compare_sim_prediction_lib.py`:the final value assumed by the synapses of **simulation vs prediction** (AxD and noAxD) with a relative difference threshold are compared.
    - If the user sets the **compare_AxDsimVSnoAxDsim** config value to: True, the optional test **AxD simulation vs noAxD simulation** is launched (the assumption is the equivalence of the final value of the synaptic trajectory).
    - Failures are summarized and a **minimal reproducer config** is dumped to files: e.g. `AxDsimVSAxDpred_failed_config.yaml` and similar file names for the other comparisons.
+
+4) **Provenance Tracking**
+   - Simulation config, outputs and comparison are stored in a `time-stamped` folder 
 ---
 
 ## Requirements
