@@ -33,7 +33,7 @@ max_rand_events_per_syn: 15
 # Simulation vs prediction is always performed
 # both AxDsimVSAxDpred and noAxDsimVSnoAxDpred
 # Set the following to True if you want also a sim-to-sim comparison
-compare_AxDsimVSnoAxDsim: True
+compare_AxDsimVSnoAxDsim: False
 
 # Simulation parameters
 T_sim_ms: 200          # Total simulation time (ms)
