@@ -93,9 +93,9 @@ Both example configs are self-documenting. Here are the important fields they su
 -  `described_syn `: total number of synaptic events manually specified in this file (can be set to zero)
 -  `add_rand_syn `: total number of synaptic events automatically added using a random generation algorthm (can be set to zero)
 -  The total number of synapses `N` is the sum of described_syn and add_rand_syn
-  Optionally restrict processing with:
-  - `start_syn`, `end_syn`: inclusive indices of the synapse subset to run and plot.
-- `described_syn`: a synapse index to emphasize in some plots/captions.
+
+Optionally restrict processing with:
+  - `start_syn`, `end_syn`: inclusive indices of the synapse subset to plot, if you want to focus your attention.
 
 **Delays (per-synapse lists, length N)**
 - `axonal_delay_ms`: axonal component.
