@@ -160,60 +160,8 @@ Optionally restrict processing with:
 
 ---
 
-## Typical workflows
-
-### A) Validate a two-delay NEST branch
-1. Point your environment to that NEST (ensure `stdp_pl_synapse_hom_ax_delay` exists).
-2. Tweak `config_sim_test_Ax_and_Dendr_Delay_STDP.yaml`:
-   - Put your per-synapse `axonal_delay_ms` and `dendritic_delay_ms`,
-   - Define the spike trains of interest,
-   - Keep `compare_AxDsimVSnoAxDsim: true`.
-3. `python main.py`  
-   - Check that **AxD vs noAxD** summaries match (equivalence).
-   - Check **simulation vs prediction** to validate STDP math.
-
-### B) Regression test against released NEST
-1. Use a standard NEST build (no axonal delay model).
-2. Run the same config.  
-   - AxD mode will effectively be single-delay; `*_sim_summary.csv` will still be produced.
-   - Use **simulation vs prediction** checks to validate.
-
-### C) Explore corner cases
-- Use `config_deterministic.yaml` and sweep specific dt relationships by editing a single synapse’s pre/post spike times.
-- Set `start_syn`/`end_syn` to hone in on a subset for dense plotting.
-- Use `add_rand_syn` + `max_rand_events_per_syn` to stress-test.
-
----
-
-## Troubleshooting
-
-- **ImportError: `nest`**  
-  Ensure your Python picks up the intended NEST install (virtualenv/conda, `PYTHONPATH`, etc.).
-- **Model `stdp_pl_synapse_hom_ax_delay` not found**  
-  That’s fine—fallback to `stdp_pl_synapse_hom` is automatic; AxD and noAxD then both use dendritic-only delays.
-- **Headless servers**  
-  Set `plot_display: false`. Plots will still be written if `sim_plot_save` / `prediction_plot_save` are `true`.
-- **Comparisons fail**  
-  - See console messages for the first offending rows.
-  - If equivalence fails, inspect `AxDsimVSnoAxDsim_failed_config.yaml` and re-run with just those synapses (`start_syn`/`end_syn`) for detailed plots.
-
----
-
-## Notes for NEST developers
-
-- The simulation code is intentionally **simple & explicit**: `iaf_psc_alpha` neurons, spike generators to force timings, homogeneous STDP, and per-synapse delays.
-- Two-delay support is “feature-toggled” by the **presence** of `stdp_pl_synapse_hom_ax_delay`.  
-  Swap in your model name if your branch uses different naming.
-- If your implementation modifies how axonal vs dendritic delays interact with **event time stamping** or **STDP time reference (pre vs post)**, adjust the predictor in `predict_stdp_alpha_forced_pl_lib.py` accordingly. It currently:
-  - builds event lists per synapse,
-  - computes dt using axonal + dendritic components as configured,
-  - applies a **pair-based** homogeneous causal/anti-causal rule,
-  - handles **dt = 0 “lumpsum”** cases explicitly.
-
----
-
 ## Citation / reuse
 
-Please keep the author credits and GPL-3.0-only license. If you publish results using this harness, a short acknowledgement is appreciated.
+Please keep the author credits and GPL-3.0-only license.
 
 ---
