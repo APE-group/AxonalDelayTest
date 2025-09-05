@@ -64,7 +64,7 @@ python main.py
 ```
 If `save_files_in_folder: true`, all outputs are copied to a timestamped folder.
 
-- **<prefix>**:
+**\<prefix\>**:
 In this readme <prefix> can assume two values:
 <prefix> = `AxD` for sim/pred with Axonal Delay
 <prefix> = `noAxD` for sim/pred without Axonal Delay
@@ -102,10 +102,14 @@ Both example configs are self-documenting. Here are the important fields they su
 Optionally restrict processing with:
   - `start_syn`, `end_syn`: inclusive indices of the synapse subset to plot, if you want to focus your attention.
 
-**Delays (per-synapse lists, length N)**
+**Delays (per-synapse lists, length `described_syn`)**
 - `axonal_delay_ms`: axonal component for synaptic events manually specified.
 - `dendritic_delay_ms`: dendritic component for synaptic events manually specified.
-- `min_axonal_delay_ms` / `max_axonal_delay_ms` and `min_dendritic_delay_ms` / `max_dendritic_delay_ms` must be set to drive random events generation.
+- `min_axonal_delay_ms` / `max_axonal_delay_ms` and `min_dendritic_delay_ms` / `max_dendritic_delay_ms` must be set to drive the range of delays for events automatically added using a random generation algorthm.
+
+**Initial Weights (per-synapse lists, length `described_syn`)**
+- `W_init`: initial synaptic weight for synaptic events manually specified.   
+- `W_min`, `W_max` must be set to drive the range of inital synaptic values for for events automatically added using a random generation algorthm.
 
 **Spike trains (per-synapse lists of times)**
 - `spike_train_pre_ms`: list of lists (one list of times per pre-neuron/synapse) for synaptic events manually specified.
@@ -152,8 +156,7 @@ Optionally restrict processing with:
 - `stdp_params` (homogeneous, pair-based):
   - `tau_plus`, `lambda`, `alpha`, `mu`  
   (Used by both simulation and predictor to keep rules matched.)
-- `W_init` (list length N) **or** `w_0` (scalar default)  
-- `W_min`, `W_max` (hard bounds applied in the model/predictor).
+   - `w_0`: used in synptic rule in prediction only
 
 ---
 
