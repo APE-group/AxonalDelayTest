@@ -62,11 +62,14 @@ AxonalDelayTest/
 # 2) Run the full pipeline:
 python main.py
 ```
-
-What you’ll get (filenames are prefixed with `AxD` or `noAxD` for the two modes):
-
 If `save_files_in_folder: true`, all outputs are copied to a timestamped folder.
 
+- **<prefix>**:
+In this readme <prefix> can assume two values:
+<prefix> = `AxD` for sim/pred with Axonal Delay
+<prefix> = `noAxD` for sim/pred without Axonal Delay
+
+What you’ll get (filenames are prefixed with `AxD` or `noAxD` for the two modes):
 - **Simulation**:
   - `<prefix>_sim_summary.csv` (per-synapse simulated start/final weights)
   - `<prefix>_spikes_pre_neurons.csv`, `<prefix>_spikes_post_neurons.csv` (spike times from sim)
@@ -92,18 +95,20 @@ Both example configs are self-documenting. Here are the important fields they su
 **Network size & selection**
 -  `described_syn `: total number of synaptic events manually specified in this file (can be set to zero)
 -  `add_rand_syn `: total number of synaptic events automatically added using a random generation algorthm (can be set to zero)
--  The total number of synapses `N` is the sum of described_syn and add_rand_syn
+- `random_seed`: seed for any randomized additions.
+- `max_rand_events_per_syn`: cap random events per added synapse.
+-  **NOTE**: The total number of synapses `N` is the sum of described_syn and add_rand_syn
 
 Optionally restrict processing with:
   - `start_syn`, `end_syn`: inclusive indices of the synapse subset to plot, if you want to focus your attention.
 
 **Delays (per-synapse lists, length N)**
-- `axonal_delay_ms`: axonal component.
-- `dendritic_delay_ms`: dendritic component.
-- (Some configs include `min_*` / `max_*` for convenience when generating values.)
+- `axonal_delay_ms`: axonal component for synaptic events manually specified.
+- `dendritic_delay_ms`: dendritic component for synaptic events manually specified.
+- `min_axonal_delay_ms` / `max_axonal_delay_ms` and `min_dendritic_delay_ms` / `max_dendritic_delay_ms` must be set to drive random events generation.
 
 **Spike trains (per-synapse lists of times)**
-- `spike_train_pre_ms`: list of lists (one list of times per pre-neuron/synapse).
+- `spike_train_pre_ms`: list of lists (one list of times per pre-neuron/synapse) for synaptic events manually specified.
 - `spike_train_post_ms`: same for post neurons.  
   You can start with empty lists and let `add_rand_syn` add more synapses.  
   `add_rand_events_lib.py` ensures:
@@ -121,8 +126,7 @@ Optionally restrict processing with:
 - `plot_display`: show figures at the end (set `false` in headless/HPC).
 - `sim_plot_save`, `prediction_plot_save`: write out `.png` plots.
 - `save_files_in_folder`: copy all declared outputs into a timestamped dir.
-- `random_seed`: seed for any randomized additions.
-- `max_rand_events_per_syn`: cap random events per added synapse.
+
 - `compare_AxDsimVSnoAxDsim`: also compare AxD vs noAxD simulation summaries.
 
 **I/O**
