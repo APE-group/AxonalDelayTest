@@ -34,7 +34,7 @@ def read_config(name_without_path):
         cfg_pms["described_syn"] = cfg["described_syn"]
         cfg_pms["add_rand_syn"] = int(cfg.get("add_rand_syn", 0))
         cfg_pms["N"] = cfg_pms["described_syn"] + cfg_pms["add_rand_syn"]
-        assert (cfg_pms["N"] > 0)
+        assert cfg_pms["N"] > 0, ("the sum of described_syn + add_rand_syn must be greater than zero") 
         cfg_pms["random_seed"] = int(cfg.get("random_seed", 123456))
         cfg_pms["max_rand_events_per_syn"] = int(cfg.get("max_rand_events_per_syn", 1))
             
