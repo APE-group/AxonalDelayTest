@@ -160,22 +160,6 @@ Optionally restrict processing with:
 
 ---
 
-## How the two modes are built
-
-- **AxD mode**  
-  - If available, the code copies `stdp_pl_synapse_hom_ax_delay` → `my_stdp_pl_hom` and sets both
-    `axonal_delay_ms[i]` and `dendritic_delay_ms[i]` per synapse.
-  - If the axonal-delay model is **not** present, AxD mode still runs, but only the dendritic delay can
-    be honored; the predictor remains consistent with what the simulator actually used.
-
-- **noAxD mode (equivalence test)**  
-  - Uses a **single effective delay** per synapse: `dendritic_eff[i] = axonal_delay_ms[i] + dendritic_delay_ms[i]`.  
-    This emulates current released NEST behavior where the synaptic delay is applied on the dendritic side.
-  - If your two-delay implementation is correct, **AxD** and **noAxD** should produce **identical final weights** when only the **sum** matters for the STDP interaction (all else equal).  
-    The code checks this and, if mismatches occur, writes a minimal reproducer config listing the failing synapses.
-
----
-
 ## Outputs in detail
 
 From **simulation** (`sim_stdp_alpha_forced_pl_lib.py`):
