@@ -13,7 +13,7 @@ It runs controlled simulations, logs spikes and weight trajectories, computes **
 
 ```
 AxonalDelayTest/
-├─ config_sim_test_Ax_and_Dendr_Delay_STDP.yaml   # USER: Please change this file
+├─ config.yaml                               # USER: Please change this file
 ├─ main.py                                   # Orchestrates the full pipeline
 ├─ sim_stdp_alpha_forced_pl_lib.py           # NEST simulation (forced spikes, STDP, logging, plots)
 ├─ predict_stdp_alpha_forced_pl_lib.py       # Offline STDP predictor + plots, using spike time from sims
@@ -21,7 +21,6 @@ AxonalDelayTest/
 ├─ add_rand_events_lib.py                    # Adds reproducible random pre/post spikes per synapse
 ├─ read_config_lib.py                        # Loads/validates YAML config, fills sane defaults
 ├─ utils_lib.py                              # Output folder bundling, failure config dumper, misc
-├─ config_deterministic.yaml                 # Deterministic, concise test-case config, included in addition to rand tests
 └─ README.md / LICENSE
 ```
 
@@ -65,8 +64,6 @@ AxonalDelayTest/
 # 2) Run the full pipeline:
 python main.py
 ```
-If `save_files_in_folder: true`, all outputs are copied to a timestamped folder.
-
 **\<prefix\>**:
 In this readme <prefix> can assume two values:
 <prefix> = `AxD` for sim/pred with Axonal Delay
@@ -91,9 +88,7 @@ What you’ll get (filenames are prefixed with `AxD` or `noAxD` for the two mode
  
 ---
 
-## Configuration (YAML)
-
-Both example configs are self-documenting. Here are the important fields they support (actual defaults are set in `read_config_lib.py`):
+## Configuration: `config.yaml`
 
 **Network size & selection**
 -  `described_syn `: total number of synaptic events manually specified in this file (can be set to zero)
