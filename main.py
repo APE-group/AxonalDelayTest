@@ -33,8 +33,10 @@ from utils_lib import *
 
 
 if __name__ == "__main__":
-    config = read_config("config_sim_test_Ax_and_Dendr_Delay_STDP.yaml")
-    config = add_rand_events(config)
+    config = read_config("config.yaml")
+
+    if config["add_rand_syn"] > 0:
+        config = add_rand_events(config)
 
     with open("current_config.yaml", "w") as file:
         yaml.dump(config, file)
@@ -153,9 +155,8 @@ if __name__ == "__main__":
             dump_failed_tests_config(config,failureList,'AxDsimVSnoAxDsim_failed_config.yaml')
     
     # Copy output files in folder
-    if config["save_files_in_folder"]:
-        foldername = copy_in_output_folder(output_files_list)
-        print(f"All output files saved in {foldername}")
+    foldername = copy_in_output_folder(output_files_list)
+    print(f"All output files saved in {foldername}")
 
     # Show all plots
     if config["plot_display"]:

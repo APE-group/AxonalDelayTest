@@ -451,7 +451,6 @@ def predict_stdp_alpha_forced_pl(config,prefix=""):
     resolution           = config["resolution"]
     axonal_support       = config["axonal_support"]
     init_weights_list    = config["W_init"]
-    save_files_in_folder = config["save_files_in_folder"]
     output_files_list    = config["output_files_list"]
     
     if axonal_support:

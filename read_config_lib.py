@@ -38,18 +38,17 @@ def read_config(name_without_path):
         cfg_pms["random_seed"] = int(cfg.get("random_seed", 123456))
         cfg_pms["max_rand_events_per_syn"] = int(cfg.get("max_rand_events_per_syn", 1))
             
-        cfg_pms["verbose_sim"] = cfg.get("verbose_sim", True)
-        cfg_pms["verbose_pred"] = cfg.get("verbose_pred", True)
+        cfg_pms["verbose_sim"] = cfg.get("verbose_sim", False)
+        cfg_pms["verbose_pred"] = cfg.get("verbose_pred", False)
 
-        cfg_pms["sim_plot_save"] = cfg["sim_plot_save"]
-        cfg_pms["prediction_plot_save"] = cfg["prediction_plot_save"]
+        cfg_pms["sim_plot_save"] = cfg.get("sim_plot_save", False)
+        cfg_pms["prediction_plot_save"] = cfg.get("prediction_plot_save", False)
         
-        cfg_pms["plot_display"] = cfg["plot_display"]
-        cfg_pms["save_files_in_folder"] = cfg["save_files_in_folder"]
+        cfg_pms["plot_display"] = cfg.get("plot_display", False)
         cfg_pms["output_files_list"] = []
         
-        cfg_pms["csv_file_pre"] = cfg["csv_file_pre"]
-        cfg_pms["csv_file_post"] = cfg["csv_file_post"]
+        cfg_pms["csv_file_pre"] = 'spikes_pre_neurons.csv'
+        cfg_pms["csv_file_post"] = 'spikes_post_neurons.csv'
         
         cfg_pms["T_sim_ms"] = cfg["T_sim_ms"]
         cfg_pms["save_int_ms"] = cfg["save_int_ms"]
@@ -58,22 +57,28 @@ def read_config(name_without_path):
         # If user doesn't specify, default to [1..N]
         cfg_pms["start_syn"] = cfg.get("start_syn", 0)
         cfg_pms["end_syn"] = cfg.get("end_syn", cfg_pms["N"]-1)
-               
-        cfg_pms["W_init"] = cfg["W_init"]
-        cfg_pms["W_min"] = cfg["W_min"]
-        cfg_pms["W_max"] = cfg["W_max"]
-        
-        cfg_pms["dendritic_delay_ms"] = cfg["dendritic_delay_ms"]
-        cfg_pms["min_dendritic_delay_ms"] = cfg["min_dendritic_delay_ms"]
-        cfg_pms["max_dendritic_delay_ms"] = cfg["max_dendritic_delay_ms"]  
-        
-        cfg_pms["axonal_delay_ms"] = cfg["axonal_delay_ms"]
-        cfg_pms["min_axonal_delay_ms"] = cfg["min_axonal_delay_ms"]
-        cfg_pms["max_axonal_delay_ms"] = cfg["max_axonal_delay_ms"]
-        
-        cfg_pms["spike_train_pre_ms"] = cfg["spike_train_pre_ms"]  
-        cfg_pms["spike_train_post_ms"] = cfg["spike_train_post_ms"]  
 
+        cfg_pms["W_init"] = []
+        cfg_pms["dendritic_delay_ms"] = []
+        cfg_pms["axonal_delay_ms"] = []
+        cfg_pms["spike_train_pre_ms"] = []  
+        cfg_pms["spike_train_post_ms"] = []  
+          
+        if cfg_pms["described_syn"] > 0:
+            cfg_pms["W_init"] = cfg["W_init"]
+            cfg_pms["dendritic_delay_ms"] = cfg["dendritic_delay_ms"]
+            cfg_pms["axonal_delay_ms"] = cfg["axonal_delay_ms"]
+            cfg_pms["spike_train_pre_ms"] = cfg["spike_train_pre_ms"]  
+            cfg_pms["spike_train_post_ms"] = cfg["spike_train_post_ms"]  
+            
+        if cfg_pms["add_rand_syn"] > 0:      
+            cfg_pms["W_min"] = cfg["W_min"]
+            cfg_pms["W_max"] = cfg["W_max"]
+            cfg_pms["min_dendritic_delay_ms"] = cfg["min_dendritic_delay_ms"]
+            cfg_pms["max_dendritic_delay_ms"] = cfg["max_dendritic_delay_ms"]  
+            cfg_pms["min_axonal_delay_ms"] = cfg["min_axonal_delay_ms"]
+            cfg_pms["max_axonal_delay_ms"] = cfg["max_axonal_delay_ms"]
+        
         cfg_pms["stdp_params"] = cfg.get("stdp_params", {"tau_plus": 20.0, "lambda": 0.9,
                                                         "alpha": 0.11, "mu": 0.4})
         cfg_pms["w_0"] = cfg["w_0"]

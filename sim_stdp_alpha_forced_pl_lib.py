@@ -108,7 +108,6 @@ def sim_stdp_alpha_forced_pl(config,prefix=""):
     
     plot_mm               = config["plot_mm"]
     
-    save_files_in_folder  = config["save_files_in_folder"]
     output_files_list     = config["output_files_list"]
     
     
