@@ -89,26 +89,10 @@ If `save_files_in_folder: true`, all outputs are copied to a timestamped folder.
 
 Both example configs are self-documenting. Here are the important fields they support (actual defaults are set in `read_config_lib.py`):
 
-**Run control**
-- `verbose_sim`, `verbose_pred`: verbose prints.
-- `plot_display`: show figures at the end (set `false` in headless/HPC).
-- `sim_plot_save`, `prediction_plot_save`: write out `.png` plots.
-- `save_files_in_folder`: copy all declared outputs into a timestamped dir.
-- `random_seed`: seed for any randomized additions.
-- `add_rand_syn`: add N extra synapses populated with random events (see below).
-- `max_rand_events_per_syn`: cap random events per added synapse.
-- `compare_AxDsimVSnoAxDsim`: also compare AxD vs noAxD simulation summaries.
-
-**I/O**
-- `csv_file_pre`, `csv_file_post`: names for pre/post spike CSVs **emitted by the simulator** and **consumed by the predictor** (they’re automatically prefixed per mode).
-
-**Timing & resolution**
-- `T_sim_ms`: total simulated time (ms).
-- `save_int_ms`: cadence for saving weight evolution.
-- `resolution`: NEST simulation resolution (ms).
-
 **Network size & selection**
-- The number of synapses `N` is inferred from the length of per-synapse lists (e.g., delays).  
+-  `described_syn `: total number of synaptic events manually specified in this file (can be set to zero)
+-  `add_rand_syn `: total number of synaptic events automatically added using a random generation algorthm (can be set to zero)
+-  The total number of synapses `N` is the sum of described_syn and add_rand_syn
   Optionally restrict processing with:
   - `start_syn`, `end_syn`: inclusive indices of the synapse subset to run and plot.
 - `described_syn`: a synapse index to emphasize in some plots/captions.
@@ -126,6 +110,23 @@ Both example configs are self-documenting. Here are the important fields they su
   - a guard **window** so the last enforced pre-spike occurs before the simulation end,
   - unique times to 0.1 ms resolution,
   - reproducibility via `random_seed`.
+ 
+**Timing & resolution**
+- `T_sim_ms`: total simulated time (ms).
+- `save_int_ms`: cadence for saving weight evolution.
+- `resolution`: NEST simulation resolution (ms).
+
+**Run control**
+- `verbose_sim`, `verbose_pred`: verbose prints.
+- `plot_display`: show figures at the end (set `false` in headless/HPC).
+- `sim_plot_save`, `prediction_plot_save`: write out `.png` plots.
+- `save_files_in_folder`: copy all declared outputs into a timestamped dir.
+- `random_seed`: seed for any randomized additions.
+- `max_rand_events_per_syn`: cap random events per added synapse.
+- `compare_AxDsimVSnoAxDsim`: also compare AxD vs noAxD simulation summaries.
+
+**I/O**
+- `<prefix>_csv_file_pre`, `<prefix>_csv_file_post`: names for pre/post spike CSVs **emitted by the simulator** and **consumed by the predictor** (they’re automatically prefixed per mode).
 
 **Neuron & forcing**
 - `neu_params`: passed to `iaf_psc_alpha` (defaults provided).  
@@ -139,7 +140,7 @@ Both example configs are self-documenting. Here are the important fields they su
     V_th: -10.0
     V_reset: -70.0
   ```
-  A high `V_th` is used to avoid accidental spiking; spikes are **forced** via generators.
+  A high `V_th` can be used to avoid additional spikes (i.e. not caused by the external stimuli); spikes are **forced** via generators.
 - `forced_in_weight`: weight from spike_generator → pre neuron.
 - `forced_out_weight`: weight from spike_generator → post neuron.
 
