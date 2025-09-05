@@ -160,29 +160,6 @@ Optionally restrict processing with:
 
 ---
 
-## Outputs in detail
-
-From **simulation** (`sim_stdp_alpha_forced_pl_lib.py`):
-- `*_sim_summary.csv` — a per-synapse table:
-  - `syn_ID`, `start_syn_value`, `final_syn_value`
-- `*_simulated_synaptic_evolution.csv` — dense time series of `w_i(t)`.
-- `*_simulated_synaptic_evolution.png` — overlayed weight trajectories.
-- `*_simulated_presynneu_raster.png` / `*_simulated_postsynneu_raster.png` — spike rasters.
-- If `plot_mm: true`, figures of `V_m` for selected neurons.
-
-From **prediction** (`predict_stdp_alpha_forced_pl_lib.py`):
-- `*_pred_summary.csv` — per-synapse predicted final weights (same schema).
-- `*_predicted_synaptic_evolution.csv` (+ `.png`) — predicted weight trajectories.
-- Predicted rasters (built from the CSVs the simulation produced).
-
-From **comparison**:
-- Console report of OK / mismatch counts.
-- Optional `AxDsimVSnoAxDsim_failed_config.yaml` with:
-  - `W_init`, `dendritic_delay`, `axonal_delay`,
-  - `spike_train_pre`, `spike_train_post` for failing synapses only.
-
----
-
 ## Typical workflows
 
 ### A) Validate a two-delay NEST branch
