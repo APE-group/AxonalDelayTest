@@ -38,7 +38,9 @@ compare_AxDsimVSnoAxDsim: False
 # Simulation parameters
 T_sim_ms: 200          # Total simulation time (ms)
 save_int_ms: 10        # Interval for saving synaptic weights (ms)
-resolution: 0.1        # NEST simulator resolution
+# NEST simulator resolution
+# Allowed values: only 0.1ms and 0.01ms
+resolution: 0.1       
 
 verbose_sim: False
 verbose_pred: False

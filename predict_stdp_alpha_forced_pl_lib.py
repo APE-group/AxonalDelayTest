@@ -164,7 +164,7 @@ def stdp_pl_synapse_hom_causal(
         pre_t_arr = pre_times_arr[i_pre]
         for j_post, post_t_raw in enumerate(post_times_raw):
             post_t_arr = post_times_arr[j_post]
-            dt_ms = np.around(post_t_arr - pre_t_arr,decimals=int(np.log(1/resolution)))
+            dt_ms = np.around(post_t_arr - pre_t_arr,decimals=int(np.log10(1/resolution)))
 
             # event_time for lumpsum grouping:
             #  LTP => post arrival => lumpsum if (dt>0, same post_arr, same j_post)
@@ -478,8 +478,8 @@ def predict_stdp_alpha_forced_pl(config,prefix=""):
         axon_d  = float( safe_get_list_item(axonal_delays_list, i, axon_default) )
         dend_d  = float( safe_get_list_item(dendritic_delays_list, i, dend_default) )
 
-        arrived_pre_dict[i]  = np.around([t + axon_d  for t in pre_spikes_dict[i]],decimals=int(np.log(1/resolution)))
-        arrived_post_dict[i] = np.around([t + dend_d  for t in post_spikes_dict[i]],decimals=int(np.log(1/resolution)))
+        arrived_pre_dict[i]  = np.around([t + axon_d  for t in pre_spikes_dict[i]],decimals=int(np.log10(1/resolution)))
+        arrived_post_dict[i] = np.around([t + dend_d  for t in post_spikes_dict[i]],decimals=int(np.log10(1/resolution)))
 
     all_arr_pre  = [t for i in range(N) for t in arrived_pre_dict[i]]
     all_arr_post = [t for i in range(N) for t in arrived_post_dict[i]]

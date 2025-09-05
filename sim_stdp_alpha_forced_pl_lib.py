@@ -300,7 +300,7 @@ def sim_stdp_alpha_forced_pl(config,prefix=""):
     df_pre = pd.DataFrame({
         #"senders": events_pre["senders"],
         "senders": np.asarray(events_pre["senders"], dtype=int) - offset,
-        "times":   np.around(events_pre["times"],decimals=int(np.log(1/resolution)))
+        "times":   np.around(events_pre["times"],decimals=int(np.log10(1/resolution)))
     })
     filename = prefix+csv_file_pre
     df_pre.to_csv(prefix+csv_file_pre, index=False)
@@ -311,7 +311,7 @@ def sim_stdp_alpha_forced_pl(config,prefix=""):
     df_post = pd.DataFrame({
         #"senders": events_post["senders"],
         "senders": np.asarray(events_post["senders"], dtype=int) - offset,
-        "times":   np.around(events_post["times"],decimals=int(np.log(1/resolution)))
+        "times":   np.around(events_post["times"],decimals=int(np.log10(1/resolution)))
     })
     filename = prefix+csv_file_post
     df_post.to_csv(prefix+csv_file_post, index=False)  

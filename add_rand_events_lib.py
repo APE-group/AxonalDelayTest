@@ -49,16 +49,16 @@ def add_rand_events(config_pms, additional_syn_N=3, max_event_N=5):
         ad = round(rng.uniform(amin, amax), 1)
         cfg["axonal_delay_ms"].append(ad)
         
-        T_last_prespike_ms = 20 + amax         # last pre-spike at fixed time before simulation ends
-        T_guard_ms = T_last_prespike_ms + 10   # 10ms before last pre-spike
-        assert (T_guard_ms > T_last_prespike_ms and T_guard_ms < T_sim_ms), "Please, augment T_sim_ms in config file"
+        guard_last_prespike_ms = 20 + amax         # last pre-spike at fixed time before simulation ends
+        guard_ms = guard_last_prespike_ms + 10   # 10ms before last pre-spike
+        assert (guard_ms > guard_last_prespike_ms and guard_ms < T_sim_ms), "Please, augment T_sim_ms in config file"
 
         def one_train():
             #assuming ~5ms the max reaction time of the neuron to the external stimulus
             n_ev = rng.randint(1, max_event_N)
             # use a set to avoid duplicates; round to 0.1 ms resolution
-            return sorted({round(rng.uniform(0.1, (T_sim_ms-T_guard_ms)), 1) for _ in range(n_ev)})
-        cfg["spike_train_pre_ms"].append(one_train()+[round(float(T_sim_ms-T_last_prespike_ms),1)])
+            return sorted({round(rng.uniform(0.1, (T_sim_ms-guard_ms)), 1) for _ in range(n_ev)})
+        cfg["spike_train_pre_ms"].append(one_train()+[round(float(T_sim_ms-guard_last_prespike_ms),1)])
         cfg["spike_train_post_ms"].append(one_train())
         
     return cfg

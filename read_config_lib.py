@@ -52,7 +52,8 @@ def read_config(name_without_path):
         
         cfg_pms["T_sim_ms"] = cfg["T_sim_ms"]
         cfg_pms["save_int_ms"] = cfg["save_int_ms"]
-        cfg_pms["resolution"] = cfg["resolution"]
+        cfg_pms["resolution"] = cfg.get("resolution", 0.1)
+        assert cfg_pms["resolution"] == 0.1 or cfg_pms["resolution"] == 0.01, ("resolution allowed values: 0.1 or 0.01 in config.yaml")
         
         # If user doesn't specify, default to [1..N]
         cfg_pms["start_syn"] = cfg.get("start_syn", 0)
