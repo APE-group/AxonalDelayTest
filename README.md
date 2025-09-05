@@ -48,7 +48,7 @@ AxonalDelayTest/
    - Failures are summarized and a **minimal reproducer config** is dumped to files: e.g. `AxDsimVSAxDpred_failed_config.yaml` and similar file names for the other comparisons.
 
 4) **Provenance Tracking**
-   - Simulation config, outputs and comparison are stored in a `time-stamped` folder 
+   - For reproducibility, the simulation `config.yaml`, all outputs and comparisons are copied in a `time-stamped` folder 
 ---
 
 ## Requirements
